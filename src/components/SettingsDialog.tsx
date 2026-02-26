@@ -48,7 +48,8 @@ const PROVIDER_CONFIGS = {
       { id: "qwen/qwen3.5-flash-02-23", name: "Qwen 3.5 Flash" },
       { id: "qwen/qwen3-coder-plus", name: "Qwen 3 Coder Plus" },
       { id: "minimax/minimax-m2.5", name: "Minimax M2.5" },
-      { id: "google/gemini-pro-1.5", name: "Gemini Pro 1.5" },
+      { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2" },
+      { id: "moonshotai/kimi-k2-thinking", name: "Kimi K2 Thinking" },
     ],
   },
   deepseek: {
