@@ -31,8 +31,8 @@ export const useSettingsStore = create<SettingsState>()(
     (set, get) => ({
       ai: {
         apiKey: "",
-        apiUrl: "https://api.openai.com/v1/chat/completions",
-        model: "gpt-5.3-codex",
+        apiUrl: "https://openrouter.ai/api/v1/chat/completions",
+        model: "qwen/qwen3.5-flash-02-23",
       },
       webSearch: {
         tavilyApiKey: "",
