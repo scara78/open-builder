@@ -108,7 +108,7 @@ export function SettingsDialog({
               onChange={(e) =>
                 setFormData({ ...formData, model: e.target.value })
               }
-              placeholder="gpt-5.3-codex"
+              placeholder="qwen/qwen3.5-flash-02-23"
             />
             <p className="text-xs text-muted-foreground">
               Name of the AI model, such as gpt-5.3-codex, deepseek-chat, etc.
