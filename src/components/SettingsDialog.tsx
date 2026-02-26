@@ -88,7 +88,7 @@ export function SettingsDialog({
               onChange={(e) =>
                 setFormData({ ...formData, apiUrl: e.target.value })
               }
-              placeholder="https://api.openai.com/v1/chat/completions"
+              placeholder="https://openrouter.ai/api/v1/chat/completions"
             />
             <p className="text-xs text-muted-foreground">
               OpenAI compatible API endpoint
