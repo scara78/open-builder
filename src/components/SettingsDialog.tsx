@@ -47,7 +47,7 @@ const PROVIDER_CONFIGS = {
       { id: "openai/gpt-5.3-codex", name: "OpenAI GPT-5.3 Codex" },
       { id: "qwen/qwen3.5-flash-02-23", name: "Qwen 3.5 Flash" },
       { id: "qwen/qwen3-coder-plus", name: "Qwen 3 Coder Plus" },
-      { id: "anthropic/claude-3-opus", name: "Claude 3 Opus" },
+      { id: "minimax/minimax-m2.5", name: "Minimax M2.5" },
       { id: "google/gemini-pro", name: "Gemini Pro" },
     ],
   },
