@@ -1,7 +1,7 @@
 import type { ToolDefinition } from "./generator";
 import type { WebSearchSettings } from "../store/settings";
 
-// ═══════════════════════════════ 工具定义 ═══════════════════════════════════
+// ═══════════════════════════════ Tool Definitions ═══════════════════════════════════
 
 export const TAVILY_TOOLS: ToolDefinition[] = [
   {
@@ -50,7 +50,7 @@ export const TAVILY_TOOLS: ToolDefinition[] = [
   },
 ];
 
-// ═══════════════════════════════ API 调用 ═══════════════════════════════════
+// ═══════════════════════════════ API Calls ═══════════════════════════════════
 
 async function tavilySearch(
   settings: WebSearchSettings,
@@ -133,7 +133,7 @@ async function jinaFallback(urls: string[]): Promise<string> {
   return JSON.stringify({ ok: pages.some((p) => p.ok), pages });
 }
 
-// ═══════════════════════════════ 工具处理器 ═══════════════════════════════════
+// ═══════════════════════════════ Tool Handler ═══════════════════════════════════
 
 export function createTavilyToolHandler(
   settings: WebSearchSettings,

@@ -7,21 +7,21 @@ import {
 } from "./generator";
 
 /**
- * OpenAI 兼容客户端配置
+ * OpenAI compatible client configuration
  */
 export interface OpenAIClientConfig {
-  /** API 端点 URL */
+  /** API endpoint URL */
   apiUrl?: string;
-  /** API 密钥 */
+  /** API key */
   apiKey: string;
-  /** 模型名称 */
+  /** Model name */
   model?: string;
-  /** 是否启用流式输出 */
+  /** Whether to enable streaming output */
   stream?: boolean;
 }
 
 /**
- * 创建 OpenAI 兼容的 Web App 生成器
+ * Create an OpenAI compatible Web App generator
  */
 export function createOpenAIGenerator(
   config: OpenAIClientConfig,
@@ -44,7 +44,7 @@ export function createOpenAIGenerator(
 }
 
 /**
- * 简化的生成函数 - 用于单次代码生成
+ * Simplified generation function - for single code generation
  */
 export async function generateWithOpenAI(
   prompt: string,
@@ -72,7 +72,7 @@ export async function generateWithOpenAI(
 
   const result = await generator.generate(prompt);
 
-  // 如果有 App.tsx 文件，返回其内容作为主代码
+  // If there is an App.tsx file, return its content as the main code
   const mainCode = finalFiles["src/App.tsx"] || finalFiles["App.tsx"] || "";
 
   return {

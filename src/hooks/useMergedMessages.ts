@@ -3,17 +3,17 @@ import type { Message, ContentPart } from "../types";
 import type { MergedMessage, Block, TextBlock, ThinkingBlock, ToolBlock } from "../types";
 
 const TOOL_NAMES: Record<string, string> = {
-  init_project: "初始化项目",
-  manage_dependencies: "管理依赖",
-  list_files: "列出项目文件",
-  // read_file: "读取文件",
-  read_files: "读取文件",
-  write_file: "写入文件",
-  patch_file: "修改文件",
-  delete_file: "删除文件",
-  search_in_files: "搜索文件",
-  web_search: "搜索网页",
-  web_reader: "读取网页",
+  init_project: "Initialize Project",
+  manage_dependencies: "Manage Dependencies",
+  list_files: "List Project Files",
+  // read_file: "Read File",
+  read_files: "Read Files",
+  write_file: "Write File",
+  patch_file: "Modify File",
+  delete_file: "Delete File",
+  search_in_files: "Search in Files",
+  web_search: "Search Web",
+  web_reader: "Read Web",
 };
 
 /** Extract plain text from message content (string or multi-part array) */
@@ -123,11 +123,11 @@ function mergeMessages(messages: Message[]): MergedMessage[] {
                 type: "tool",
                 toolName: tc.function.name,
                 title: isReadFiles
-                  ? `读取 ${paths?.length ?? 0} 个文件`
+                  ? `Read ${paths?.length ?? 0} files`
                   : isWebSearch
-                    ? `搜索: ${args.query || ""}`
+                    ? `Search: ${args.query || ""}`
                     : isWebReader
-                      ? `读取 ${(args.urls as string[])?.length ?? 0} 个网页`
+                      ? `Read ${(args.urls as string[])?.length ?? 0} web pages`
                       : TOOL_NAMES[tc.function.name] || tc.function.name,
                 path: args.path || "",
                 paths,

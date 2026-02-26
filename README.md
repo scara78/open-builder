@@ -2,7 +2,7 @@
 
 # Open Builder
 
-**基于 AI 的 Web 应用生成器 —— 用自然语言描述，即刻生成可运行的完整项目**
+**AI-Powered Web App Generator — Describe in natural language, instantly generate a complete, runnable project**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
@@ -10,238 +10,238 @@
 [![Vite](https://img.shields.io/badge/Vite-7.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.x-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 
-[部署指南](#部署) · [快速开始](#快速开始) · [功能特性](#功能特性) · [技术架构](#技术架构) · [贡献指南](CONTRIBUTING.md)
+[Deployment Guide](#deployment) · [Quick Start](#quick-start) · [Features](#features) · [Architecture](#architecture) · [Contribution Guide](CONTRIBUTING.md)
 
 </div>
 
 ---
 
-## 简介
+## Introduction
 
-Open Builder 是一个完全运行在浏览器中的 AI 驱动 Web 应用生成器。你只需用自然语言描述想要构建的应用，AI 就会通过工具调用（Tool Call）循环，在内存文件系统中自动创建、修改、删除文件，并通过 [Sandpack](https://sandpack.codesandbox.io/) 实时预览运行结果。
+Open Builder is an AI-driven web app generator that runs entirely in the browser. You simply describe the app you want to build in natural language, and the AI will automatically create, modify, and delete files through a Tool Call loop in an in-memory file system, with real-time preview of the results through [Sandpack](https://sandpack.codesandbox.io/).
 
-整个过程无需后端服务器，所有计算均在浏览器端完成。你的 API Key 仅保存在本地浏览器存储中，不会上传到任何服务器。
+The entire process requires no backend server, with all computation done in the browser. Your API Key is only stored in the browser's local storage and is never uploaded to any server.
 
-> 兼容任何 OpenAI Chat Completions 格式的 API，包括 OpenAI、Anthropic Claude、DeepSeek、通义千问等主流模型服务。
+> Compatible with any OpenAI Chat Completions API, including OpenAI, Anthropic Claude, DeepSeek, Qwen, and other major model services.
 
 ---
 
-## 演示
+## Demo
 
 ![screenshot](/public/images/screenshot.jpg)
 
-[演示网站](https://builder.u14.app)
+[Demo Site](https://builder.u14.app)
 
 ---
 
-## 功能特性
+## Features
 
-### 核心能力
+### Core Capabilities
 
-- **自然语言生成代码** — 描述你的想法，AI 自动规划并生成完整项目结构
-- **实时预览** — 基于 Sandpack 的浏览器内沙箱，代码变更即时渲染
-- **多框架支持** — 支持 React、Vue、Svelte、Angular、SolidJS、Astro 等 20+ 模板
-- **智能文件操作** — AI 通过 `patch_file` 精确修改文件，避免不必要的全量重写
-- **依赖管理** — AI 可自动修改 `package.json` 并触发依赖重装
+- **Natural Language to Code** — Describe your idea, and AI automatically plans and generates a complete project structure
+- **Real-time Preview** — Browser-based sandbox with instant rendering of code changes
+- **Multi-framework Support** — Supports React, Vue, Svelte, Angular, SolidJS, Astro, and 20+ templates
+- **Smart File Operations** — AI precisely modifies files through `patch_file`, avoiding unnecessary full rewrites
+- **Dependency Management** — AI can automatically modify `package.json` and trigger dependency reinstallation
 
-### 交互体验
+### Interactive Experience
 
-- **多会话管理** — 支持创建、切换、删除多个独立对话，历史记录持久化保存
-- **图片输入** — 支持上传截图或设计稿，AI 根据图片生成对应界面
-- **流式输出** — 实时展示 AI 思考过程和代码生成进度
-- **扩展思考** — 支持 Extended Thinking / Reasoning 模式（DeepSeek-R1、Claude 4.6 等）
-- **一键下载** — 将生成的项目打包为 ZIP 文件下载到本地
-- **移动端适配** — 响应式布局，移动端可内嵌预览生成的应用
+- **Multi-session Management** — Supports creating, switching, and deleting multiple independent conversations, with persistent history
+- **Image Input** — Supports uploading screenshots or design mockups, with AI generating corresponding interfaces
+- **Streaming Output** — Real-time display of AI thinking process and code generation progress
+- **Extended Thinking** — Supports Extended Thinking / Reasoning mode (DeepSeek-R1, Claude 4.6, etc.)
+- **One-click Download** — Package the generated project as a ZIP file for local download
+- **Mobile Adaptation** — Responsive layout with embedded preview of generated apps on mobile
 
-### 联网搜索（可选）
+### Web Search (Optional)
 
-- 集成 [Tavily](https://tavily.com) API，AI 可实时搜索网页获取最新信息
-- 支持网页内容读取，自动降级到 [Jina Reader](https://jina.ai/reader/) 作为备用方案
+- Integrated with [Tavily](https://tavily.com) API, allowing AI to search the web for up-to-date information
+- Supports web content reading, with automatic fallback to [Jina Reader](https://jina.ai/reader/) as a backup solution
 
 ---
 
-## 快速开始
+## Quick Start
 
-### 前置要求
+### Prerequisites
 
-- Node.js 20+ 或 [Bun](https://bun.sh)
-- 任意 OpenAI 兼容 API 的 Key
+- Node.js 20+ or [Bun](https://bun.sh)
+- Any OpenAI compatible API Key
 
-### 安装与运行
+### Installation and Running
 
 ```bash
-# 克隆仓库
+# Clone repository
 git clone https://github.com/Amery2010/open-builder.git
 cd open-builder
 
-# 安装依赖
+# Install dependencies
 pnpm install
 
-# 启动开发服务器
+# Start development server
 pnpm dev
 ```
 
-打开浏览器访问 `http://localhost:5173`，点击右上角设置图标配置你的 API Key 即可开始使用。
+Open your browser and visit `http://localhost:5173`, then click the settings icon in the top right to configure your API Key to get started.
 
-### 配置说明
+### Configuration Guide
 
-点击界面右上角的设置按钮，填写以下信息：
+Click the settings button in the top right corner of the interface to fill in the following information:
 
-| 配置项         | 说明                  | 示例                                         |
+| Configuration | Description | Example |
 | -------------- | --------------------- | -------------------------------------------- |
-| API Key        | 你的 AI 服务 API 密钥 | `sk-...`                                     |
-| API URL        | OpenAI 兼容的接口地址 | `https://api.openai.com/v1/chat/completions` |
-| 模型名称       | 使用的模型 ID         | `gpt-5.3-codex`、`deepseek-chat`             |
-| Tavily API Key | （可选）联网搜索功能  | `tvly-...`                                   |
+| API Key | Your AI service API key | `sk-...` |
+| API URL | OpenAI compatible endpoint | `https://api.openai.com/v1/chat/completions` |
+| Model Name | Model ID to use | `gpt-5.3-codex`, `deepseek-chat` |
+| Tavily API Key | (Optional) Web search feature | `tvly-...` |
 
-> 所有配置均保存在浏览器 `localStorage` 中，不会离开你的设备。
+> All configurations are saved in browser `localStorage` and never leave your device.
 
 ---
 
-## 技术架构
+## Architecture
 
 ```
 open-builder/
 ├── src/
 │   ├── components/
-│   │   ├── ChatInterface.tsx      # 主聊天界面
-│   │   ├── CodeViewer.tsx         # 代码查看器（编辑器 + 预览）
-│   │   ├── SettingsDialog.tsx     # 设置对话框
-│   │   └── chat/                  # 聊天子组件
-│   │       ├── ChatHeader.tsx     # 顶部栏（会话切换、设置）
-│   │       ├── ChatInput.tsx      # 输入框（支持图片上传）
-│   │       ├── MessageBubble.tsx  # 消息气泡
-│   │       ├── ToolCallCard.tsx   # 工具调用可视化卡片
-│   │       ├── MobilePreview.tsx  # 移动端内嵌预览
-│   │       └── SessionList.tsx    # 会话列表侧边栏
+│   │   ├── ChatInterface.tsx      # Main chat interface
+│   │   ├── CodeViewer.tsx         # Code viewer (editor + preview)
+│   │   ├── SettingsDialog.tsx     # Settings dialog
+│   │   └── chat/                  # Chat sub-components
+│   │       ├── ChatHeader.tsx     # Top bar (session switching, settings)
+│   │       ├── ChatInput.tsx      # Input box (supports image upload)
+│   │       ├── MessageBubble.tsx  # Message bubbles
+│   │       ├── ToolCallCard.tsx   # Tool call visualization cards
+│   │       ├── MobilePreview.tsx  # Mobile embedded preview
+│   │       └── SessionList.tsx    # Session list sidebar
 │   ├── hooks/
-│   │   ├── useAppState.ts         # 应用状态聚合
-│   │   ├── useGenerator.ts        # AI 生成器 Hook
-│   │   ├── useMergedMessages.ts   # 消息合并（合并连续工具调用）
-│   │   └── useIsMobile.ts         # 移动端检测
+│   │   ├── useAppState.ts         # Application state aggregation
+│   │   ├── useGenerator.ts        # AI generator Hook
+│   │   ├── useMergedMessages.ts   # Message merging (merge consecutive tool calls)
+│   │   └── useIsMobile.ts         # Mobile detection
 │   ├── lib/
-│   │   ├── generator.ts           # 核心：WebAppGenerator 引擎
-│   │   ├── tavily.ts              # 联网搜索工具（Tavily + Jina）
-│   │   └── client.ts              # API 客户端封装
+│   │   ├── generator.ts           # Core: WebAppGenerator engine
+│   │   ├── tavily.ts              # Web search tools (Tavily + Jina)
+│   │   └── client.ts              # API client wrapper
 │   ├── store/
-│   │   ├── conversation.ts        # Zustand 会话状态（含持久化）
-│   │   └── settings.ts            # Zustand 设置状态（含持久化）
+│   │   ├── conversation.ts        # Zustand conversation state (with persistence)
+│   │   └── settings.ts            # Zustand settings state (with persistence)
 │   └── types/
-│       └── index.ts               # 全局类型定义
+│       └── index.ts               # Global type definitions
 ```
 
-### 核心引擎：WebAppGenerator
+### Core Engine: WebAppGenerator
 
-[src/lib/generator.ts](src/lib/generator.ts) 是整个项目的核心，实现了完整的 AI Tool Call 循环引擎：
+[src/lib/generator.ts](src/lib/generator.ts) is the core of the entire project, implementing a complete AI Tool Call loop engine:
 
 ```
-用户消息 → AI 规划 → 工具调用 → 执行工具 → 返回结果 → AI 继续/结束
+User message → AI planning → Tool call → Tool execution → Return result → AI continue/finish
                                     ↓
-                              内存文件系统
+                              In-memory file system
                                     ↓
-                           Sandpack 实时预览
+                           Sandpack real-time preview
 ```
 
-内置工具列表：
+Built-in tool list:
 
-| 工具                  | 描述                               |
+| Tool | Description |
 | --------------------- | ---------------------------------- |
-| `init_project`        | 初始化 Sandpack 项目模板           |
-| `manage_dependencies` | 修改 package.json 管理依赖         |
-| `list_files`          | 列出所有项目文件                   |
-| `read_files`          | 批量读取文件内容                   |
-| `write_file`          | 创建或覆写文件                     |
-| `patch_file`          | 精确搜索替换补丁（推荐用于小改动） |
-| `delete_file`         | 删除文件                           |
-| `search_in_files`     | 正则搜索文件内容                   |
-| `web_search`          | 联网搜索（需配置 Tavily）          |
-| `web_reader`          | 读取网页内容                       |
+| `init_project` | Initialize Sandpack project template |
+| `manage_dependencies` | Modify package.json to manage dependencies |
+| `list_files` | List all project files |
+| `read_files` | Batch read file contents |
+| `write_file` | Create or overwrite files |
+| `patch_file` | Precise search-replace patches (recommended for small changes) |
+| `delete_file` | Delete files |
+| `search_in_files` | Regex search in files |
+| `web_search` | Web search (requires Tavily configuration) |
+| `web_reader` | Read web page content |
 
-### 技术栈
+### Tech Stack
 
-| 类别          | 技术                              |
+| Category | Technology |
 | ------------- | --------------------------------- |
-| 框架          | React 19 + TypeScript 5           |
-| 构建工具      | Vite 7                            |
-| 样式          | Tailwind CSS v4                   |
-| UI 组件       | shadcn/ui + Radix UI              |
-| 代码沙箱      | Sandpack (CodeSandbox)            |
-| 状态管理      | Zustand 5                         |
-| 本地存储      | localforage                       |
-| 图标          | Lucide React                      |
-| Markdown 渲染 | react-markdown + rehype-highlight |
+| Framework | React 19 + TypeScript 5 |
+| Build Tool | Vite 7 |
+| Styling | Tailwind CSS v4 |
+| UI Components | shadcn/ui + Radix UI |
+| Code Sandbox | Sandpack (CodeSandbox) |
+| State Management | Zustand 5 |
+| Local Storage | localforage |
+| Icons | Lucide React |
+| Markdown Rendering | react-markdown + rehype-highlight |
 
 ---
 
-## 支持的模型
+## Supported Models
 
-Open Builder 兼容所有 OpenAI Chat Completions 格式的 API：
+Open Builder is compatible with all OpenAI Chat Completions API:
 
-| 服务商   | 推荐模型                             | API URL                                                              |
+| Provider | Recommended Models | API URL |
 | -------- | ------------------------------------ | -------------------------------------------------------------------- |
-| OpenAI   | `gpt-5.3-codex`、`gpt-5.2`           | `https://api.openai.com/v1/chat/completions`                         |
-| DeepSeek | `deepseek-chat`、`deepseek-reasoner` | `https://api.deepseek.com/v1/chat/completions`                       |
-| 通义千问 | `qwen-3.5`、`qwen3-coder-plus`       | `https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions` |
-| 月之暗面 | `kimi-k2.5`                          | `https://api.moonshot.cn/v1/chat/completions`                        |
-| 智谱 AI  | `glm-5`                              | `https://open.bigmodel.cn/api/paas/v4/chat/completions`              |
+| OpenAI | `gpt-5.3-codex`, `gpt-5.2` | `https://api.openai.com/v1/chat/completions` |
+| DeepSeek | `deepseek-chat`, `deepseek-reasoner` | `https://api.deepseek.com/v1/chat/completions` |
+| Qwen | `qwen-3.5`, `qwen3-coder-plus` | `https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions` |
+| Moonshot AI | `kimi-k2.5` | `https://api.moonshot.cn/v1/chat/completions` |
+| Zhipu AI | `glm-5` | `https://open.bigmodel.cn/api/paas/v4/chat/completions` |
 
-> 推荐使用支持 Function Calling 的强力模型以获得最佳效果。
+> It is recommended to use models that support Function Calling for the best results.
 
 ---
 
-## 部署
+## Deployment
 
-### 构建生产版本
+### Build Production Version
 
 ```bash
 pnpm build
-# 产物输出到 dist/ 目录
+# Output to dist/ directory
 ```
 
-### 部署到 GitHub Pages
+### Deploy to GitHub Pages
 
-本项目配置了 GitHub Actions，推送版本 tag 即可自动构建并部署：
+This project is configured with GitHub Actions, pushing a version tag will automatically build and deploy:
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-详见 [.github/workflows/deploy.yml](.github/workflows/deploy.yml)。
+See [.github/workflows/deploy.yml](.github/workflows/deploy.yml).
 
-### 部署到 Vercel
+### Deploy to Vercel
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAmery2010%2Fopen-builder)
 
-或手动部署：导入 GitHub 仓库，框架预设选择 `Vite`，构建命令 `pnpm run build`，输出目录 `dist`，无需额外配置。
+Or deploy manually: Import GitHub repository, select `Vite` as framework preset, build command `pnpm run build`, output directory `dist`, no additional configuration needed.
 
-### 部署到 Cloudflare Worker
+### Deploy to Cloudflare Worker
 
 [![Deploy to Cloudflare Worker](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Amery2010/open-builder)
 
-或手动部署：
+Or deploy manually:
 
-1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/) → Workers & Pages → Create → Worker → Connect to Git
-2. 选择 `open-builder` 仓库，构建配置如下：
+1. Log in to [Cloudflare Dashboard](https://dash.cloudflare.com/) → Workers & Pages → Create → Worker → Connect to Git
+2. Select `open-builder` repository, with the following build configuration:
 
-| 配置项       | 值               |
+| Configuration | Value |
 | ------------ | ---------------- |
-| 构建命令     | `pnpm run build` |
-| 输出目录     | `dist`           |
-| Node.js 版本 | `20`             |
+| Build Command | `pnpm run build` |
+| Output Directory | `dist` |
+| Node.js Version | `20` |
 
-### 部署到 Netlify
+### Deploy to Netlify
 
-直接导入仓库，构建命令 `pnpm run build`，输出目录 `dist`，无需任何额外配置。
-
----
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！请先阅读 [贡献指南](CONTRIBUTING.md)。
+Import repository directly, build command `pnpm run build`, output directory `dist`, no additional configuration needed.
 
 ---
 
-## 许可证
+## Contribution
+
+Welcome to submit Issues and Pull Requests! Please read the [Contribution Guide](CONTRIBUTING.md) first.
+
+---
+
+## License
 
 [GPLv3 License](LICENSE) © 2026 Open Builder Contributors

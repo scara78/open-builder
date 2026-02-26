@@ -1,39 +1,39 @@
 // ============================================================================
 //  web-app-generator.ts
-//  AI Tool Call 引擎 —— 通过 OpenAI 兼容 API 驱动，在内存文件系统中生成 Web App
-//  所有文件以 Record<path, content> 形式存储，无任何 Node.js 依赖，可在浏览器运行
+//  AI Tool Call Engine —— Driven by OpenAI compatible API, generates Web Apps in memory file system
+//  All files are stored as Record<path, content>, with no Node.js dependencies, can run in browser
 // ============================================================================
 
 import { SANDBOX_TEMPLATES } from "@codesandbox/sandpack-react";
 
-// ═══════════════════════════════ 类型定义 ═══════════════════════════════════
+// ═══════════════════════════════ Type Definitions ═══════════════════════════════════
 
-/** 项目文件：路径 → 内容 */
+/** Project files: path → content */
 export type ProjectFiles = Record<string, string>;
 
-/** OpenAI 多模态内容块 */
+/** OpenAI multimodal content block */
 export type ContentPart =
   | { type: "text"; text: string }
   | { type: "image_url"; image_url: { url: string } };
 
-/** OpenAI 格式的消息 */
+/** OpenAI format message */
 export interface Message {
   role: "system" | "user" | "assistant" | "tool";
   content: string | ContentPart[] | null;
   tool_calls?: ToolCall[];
   tool_call_id?: string;
-  /** 模型思考过程（extended thinking） */
+  /** Model thinking process (extended thinking) */
   thinking?: string;
 }
 
-/** 工具调用 */
+/** Tool call */
 export interface ToolCall {
   id: string;
   type: "function";
   function: { name: string; arguments: string };
 }
 
-/** 工具定义（OpenAI function calling 格式） */
+/** Tool definition (OpenAI function calling format) */
 export interface ToolDefinition {
   type: "function";
   function: {
@@ -43,13 +43,13 @@ export interface ToolDefinition {
   };
 }
 
-/** 文件变更记录 */
+/** File change record */
 export interface FileChange {
   path: string;
   action: "created" | "modified" | "deleted";
 }
 
-/** generate() 的最终返回值 */
+/** Final return value of generate() */
 export interface GenerateResult {
   files: ProjectFiles;
   messages: Message[];
@@ -58,57 +58,57 @@ export interface GenerateResult {
   maxIterationsReached: boolean;
 }
 
-/** 构造选项 */
+/** Constructor options */
 export interface GeneratorOptions {
-  /** OpenAI 兼容 API 端点, 如 "https://api.openai.com/v1/chat/completions" */
+  /** OpenAI compatible API endpoint, e.g. "https://api.openai.com/v1/chat/completions" */
   apiUrl: string;
-  /** API 密钥 */
+  /** API key */
   apiKey: string;
-  /** 模型 ID, 如 "gpt-5.3-codex"、"deepseek-chat"、"claude-3-5-sonnet" */
+  /** Model ID, e.g. "gpt-5.3-codex", "deepseek-chat", "claude-3-5-sonnet" */
   model: string;
-  /** 自定义系统提示词（提供了合理默认值） */
+  /** Custom system prompt (provides reasonable default) */
   systemPrompt?: string;
-  /** 初始项目文件 */
+  /** Initial project files */
   initialFiles?: ProjectFiles;
-  /** 工具调用最大循环轮次（默认 30） */
+  /** Maximum tool call loop rounds (default 30) */
   maxIterations?: number;
-  /** 是否启用流式输出（默认 true） */
+  /** Whether to enable streaming output (default true) */
   stream?: boolean;
-  /** 附加请求头 */
+  /** Additional request headers */
   headers?: Record<string, string>;
-  /** 额外的自定义工具定义 */
+  /** Additional custom tool definitions */
   customTools?: ToolDefinition[];
-  /** 自定义工具的执行回调（内置工具之外的分发到这里） */
+  /** Custom tool execution callback (dispatched here for tools beyond built-in ones) */
   customToolHandler?: (name: string, args: unknown) => string | Promise<string>;
-  /** 是否启用 thinking（默认 true） */
+  /** Whether to enable thinking (default true) */
   thinking?: boolean;
-  /** thinking 的 budget_tokens（默认 10000） */
+  /** thinking's budget_tokens (default 10000) */
   thinkingBudget?: number;
 }
 
-/** 事件回调 */
+/** Event callbacks */
 export interface GeneratorEvents {
-  /** AI 输出文本片段（流式时逐 chunk 触发） */
+  /** AI outputs text fragment (triggered chunk by chunk when streaming) */
   onText?: (delta: string) => void;
-  /** AI 思考过程片段（流式时逐 chunk 触发） */
+  /** AI thinking process fragment (triggered chunk by chunk when streaming) */
   onThinking?: (delta: string) => void;
-  /** AI 开始调用某个工具 */
+  /** AI starts calling a tool */
   onToolCall?: (name: string, toolCallId: string) => void;
-  /** 工具执行完毕 */
+  /** Tool execution completed */
   onToolResult?: (name: string, args: unknown, result: string) => void;
-  /** 项目文件发生变更 */
+  /** Project files changed */
   onFileChange?: (files: ProjectFiles, changes: FileChange[]) => void;
-  /** 项目模板变更（init_project 触发） */
+  /** Project template changed (triggered by init_project) */
   onTemplateChange?: (template: string, files: ProjectFiles) => void;
-  /** 项目依赖变更（manage_dependencies 触发，需要重启 Sandpack） */
+  /** Project dependencies changed (triggered by manage_dependencies, needs to restart Sandpack) */
   onDependenciesChange?: (files: ProjectFiles) => void;
-  /** 整个 generate 流程结束 */
+  /** Entire generate flow completed */
   onComplete?: (result: GenerateResult) => void;
-  /** 出错 */
+  /** Error occurred */
   onError?: (error: Error) => void;
 }
 
-// ═══════════════════════════════ 默认常量 ═══════════════════════════════════
+// ═══════════════════════════════ Default Constants ═══════════════════════════════════
 
 const DEFAULT_SYSTEM_PROMPT = `You are an expert web developer. You build complete, working web applications using the provided file-system tools.
 
@@ -121,7 +121,7 @@ Guidelines:
 6. Always read files before modifying them. Use read_files (plural) when reading 2 or more files at once — never call read_file multiple times in a row.
 7. Briefly explain your plan before starting and summarize when finished.`;
 
-/** 内置工具定义 */
+/** Built-in tool definitions */
 const BUILTIN_TOOLS: ToolDefinition[] = [
   {
     type: "function",
@@ -320,16 +320,16 @@ const BUILTIN_TOOLS: ToolDefinition[] = [
   },
 ];
 
-// ════════════════════════════ WebAppGenerator 类 ════════════════════════════
+// ════════════════════════════ WebAppGenerator Class ════════════════════════════
 
 export class WebAppGenerator {
-  // ── 内部状态 ──
+  // ── Internal state ──
   private files: ProjectFiles;
   private messages: Message[];
   private events: GeneratorEvents;
   private ctrl: AbortController | null = null;
 
-  // ── 配置（只读） ──
+  // ── Configuration (read-only) ──
   private readonly apiUrl: string;
   private readonly apiKey: string;
   private readonly model: string;
@@ -360,44 +360,44 @@ export class WebAppGenerator {
     this.events = events;
   }
 
-  // ═══════════════════════════ 公开 API ═══════════════════════════════════
+  // ═══════════════════════════ Public API ═══════════════════════════════════
 
-  /** 获取当前项目文件快照 */
+  /** Get current project files snapshot */
   getFiles(): ProjectFiles {
     return { ...this.files };
   }
 
-  /** 替换整个项目文件 */
+  /** Replace entire project files */
   setFiles(files: ProjectFiles): void {
     this.files = { ...files };
   }
 
-  /** 获取完整对话消息历史 */
+  /** Get complete conversation message history */
   getMessages(): Message[] {
     return [...this.messages];
   }
 
-  /** 清空对话历史（文件保留） */
+  /** Clear conversation history (files retained) */
   resetMessages(): void {
     this.messages = [];
   }
 
-  /** 中止正在进行的 generate 请求 */
+  /** Abort ongoing generate request */
   abort(): void {
     this.ctrl?.abort();
     this.ctrl = null;
   }
 
   /**
-   * 重试：不添加新的用户消息，直接重新运行生成循环
-   * 用于错误后重试，此时用户消息已在历史中
+   * Retry: don't add new user message, directly re-run generation loop
+   * Used for retry after error, when user message is already in history
    */
   async retry(): Promise<GenerateResult> {
     return this._runGenerateLoop();
   }
 
   /**
-   * 核心方法：发送用户消息，驱动 AI 通过 Tool Call 循环生成/修改项目文件
+   * Core method: send user message, drive AI through Tool Call loop to generate/modify project files
    */
   async generate(
     userMessage: string,
@@ -483,7 +483,7 @@ export class WebAppGenerator {
     return result;
   }
 
-  // ══════════════════════════ 内部方法 ══════════════════════════════════════
+  // ══════════════════════════ Internal Methods ══════════════════════════════════════
 
   private buildSystemContent(): string {
     const paths = Object.keys(this.files).sort();
