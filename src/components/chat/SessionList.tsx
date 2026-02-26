@@ -64,7 +64,7 @@ export function SessionList({ onClose }: SessionListProps) {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <div className="px-3 py-2.5 border-b flex items-center justify-between">
-        <span className="text-sm font-medium">会话列表</span>
+        <span className="text-sm font-medium">Session List</span>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNew}>
           <Plus size={16} />
         </Button>

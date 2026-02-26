@@ -70,7 +70,7 @@ export const useConversationStore = create<ConversationState>()(
         const id = crypto.randomUUID();
         const conv: Conversation = {
           id,
-          title: "新应用",
+          title: "New App",
           messages: [],
           files: {},
           template: "vite-react-ts",
@@ -109,7 +109,7 @@ export const useConversationStore = create<ConversationState>()(
           const conv = s.conversations[s.activeId];
           const newMessages = applyUpdater(updater, conv.messages);
           let title = conv.title;
-          if (title === "新应用") {
+          if (title === "New App") {
             const derived = deriveTitle(newMessages);
             if (derived) title = derived;
           }

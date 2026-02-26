@@ -83,15 +83,15 @@ export function ToolCallCard({
         </span>
         {toolName === "web_search" && result ? (
           <Badge variant="secondary" className="text-xs font-mono h-5">
-            {searchResultCount} 条结果
+            {searchResultCount} results
           </Badge>
         ) : toolName === "web_reader" && result ? (
           <Badge variant="secondary" className="text-xs font-mono h-5">
-            {readerUrls.length} 个网页
+            {readerUrls.length} pages
           </Badge>
         ) : paths && paths.length > 0 ? (
           <Badge variant="secondary" className="text-xs font-mono h-5">
-            {paths.length} 个文件
+            {paths.length} files
           </Badge>
         ) : path ? (
           <Badge
@@ -130,13 +130,13 @@ export function ToolCallCard({
             <FileTreeView content={(paths || []).join("\n")} />
           ) : toolName === "read_file" ? (
             <span className="text-xs text-muted-foreground italic">
-              文件内容已隐藏
+              File content is hidden
             </span>
           ) : toolName === "web_search" ? (
             <p className="text-xs text-muted-foreground">
               {result.startsWith("Error")
-                ? `失败: ${result}`
-                : `已找到 ${searchResultCount} 条搜索结果`}
+                ? `Failed: ${result}`
+                : `Found ${searchResultCount} search results`}
             </p>
           ) : toolName === "web_reader" ? (
             <div className="space-y-0.5">

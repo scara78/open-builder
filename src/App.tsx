@@ -74,7 +74,7 @@ export default function App() {
   if (!hasHydrated) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">加载中...</p>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -113,10 +113,10 @@ export default function App() {
           <div className="text-center max-w-md px-6">
             <div className="text-5xl mb-6">🚀</div>
             <h2 className="text-xl font-semibold text-foreground mb-2">
-              开始构建你的项目
+              Start building your project
             </h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              在左侧对话框中描述你想要创建的应用，AI 将为你生成完整的项目代码。
+              Describe the app you want to create in the chat on the left, and AI will generate the complete project code for you.
             </p>
           </div>
         </div>

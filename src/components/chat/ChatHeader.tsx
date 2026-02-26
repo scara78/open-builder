@@ -13,7 +13,7 @@ export function ChatHeader({
   onToggleSessionList,
 }: ChatHeaderProps) {
   const title = useConversationStore((s) =>
-    s.activeId ? (s.conversations[s.activeId]?.title ?? "新应用") : "新应用",
+    s.activeId ? (s.conversations[s.activeId]?.title ?? "New App") : "New App",
   );
 
   return (
@@ -22,7 +22,7 @@ export function ChatHeader({
         variant="ghost"
         size="icon"
         onClick={onToggleSessionList}
-        title="会话列表"
+        title="Session List"
         className="h-8 w-8 shrink-0"
       >
         <PanelLeft size={18} />
@@ -35,7 +35,7 @@ export function ChatHeader({
           <Button
             variant="ghost"
             size="icon"
-            title="开源代码"
+            title="Open Source Code"
             className="h-8 w-8 shrink-0"
           >
             <Github size={18} />
@@ -45,7 +45,7 @@ export function ChatHeader({
           variant="ghost"
           size="icon"
           onClick={onOpenSettings}
-          title="AI 模型设置"
+          title="AI Model Settings"
           className="h-8 w-8 shrink-0"
         >
           <Settings size={18} />

@@ -57,7 +57,7 @@ export function FileTreeView({ content }: FileTreeViewProps) {
     .filter((l) => l && l !== "(empty)");
 
   if (paths.length === 0) {
-    return <span className="text-xs text-muted-foreground">（空）</span>;
+    return <span className="text-xs text-muted-foreground">（empty）</span>;
   }
 
   const tree = buildTree(paths);

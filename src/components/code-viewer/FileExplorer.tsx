@@ -143,7 +143,7 @@ export function FileExplorer({
         {showNewFileInput
           ? <File size={12} className="text-blue-600" />
           : <Folder size={12} className="text-blue-600" />}
-        <span className="text-xs text-blue-700">{showNewFileInput ? "新建文件" : "新建文件夹"}</span>
+        <span className="text-xs text-blue-700">{showNewFileInput ? "New File" : "New Folder"}</span>
       </div>
       <div className="flex items-center gap-1">
         <input
@@ -152,14 +152,14 @@ export function FileExplorer({
           value={newItemName}
           onChange={(e) => setNewItemName(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={showNewFileInput ? "文件名.tsx" : "文件夹名"}
+          placeholder={showNewFileInput ? "filename.tsx" : "folder name"}
           className="flex-1 px-2 py-1 text-xs border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
         <button onClick={handleCancelCreate} className="p-1 hover:bg-blue-100 rounded transition-colors">
           <X size={10} className="text-gray-600" />
         </button>
       </div>
-      <div className="mt-1 text-xs text-gray-500">Enter 确认 · Esc 取消</div>
+      <div className="mt-1 text-xs text-gray-500">Enter to confirm · Esc to cancel</div>
     </div>
   );
 
@@ -187,14 +187,14 @@ export function FileExplorer({
               <Button
                 variant="ghost" size="icon" className="h-5 w-5"
                 onClick={(e) => { e.stopPropagation(); startCreate("file", node.path); }}
-                title="在此文件夹中新建文件"
+                title="Create new file in this folder"
               >
                 <FilePlus size={12} />
               </Button>
               <Button
                 variant="ghost" size="icon" className="h-5 w-5"
                 onClick={(e) => { e.stopPropagation(); startCreate("folder", node.path); }}
-                title="在此文件夹中新建文件夹"
+                title="Create new folder in this folder"
               >
                 <FolderPlus size={12} />
               </Button>
@@ -229,14 +229,14 @@ export function FileExplorer({
   return (
     <div className="h-full flex flex-col bg-background">
       <div className="px-2 py-2 border-b flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground uppercase">文件</span>
+        <span className="text-xs font-medium text-muted-foreground uppercase">Files</span>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" className="h-6 w-6"
-            onClick={() => startCreate("file", getCurrentDirectory())} title="新建文件">
+            onClick={() => startCreate("file", getCurrentDirectory())} title="New File">
             <FilePlus size={14} />
           </Button>
           <Button variant="ghost" size="icon" className="h-6 w-6"
-            onClick={() => startCreate("folder", getCurrentDirectory())} title="新建文件夹">
+            onClick={() => startCreate("folder", getCurrentDirectory())} title="New Folder">
             <FolderPlus size={14} />
           </Button>
         </div>
@@ -251,7 +251,7 @@ export function FileExplorer({
               {showNewFileInput
                 ? <File size={12} className="text-blue-600" />
                 : <Folder size={12} className="text-blue-600" />}
-              <span className="text-xs text-blue-700">{showNewFileInput ? "新建文件" : "新建文件夹"}</span>
+              <span className="text-xs text-blue-700">{showNewFileInput ? "New File" : "New Folder"}</span>
             </div>
             <div className="flex items-center gap-1">
               <Input
@@ -260,14 +260,14 @@ export function FileExplorer({
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={showNewFileInput ? "文件名.tsx" : "文件夹名"}
+                placeholder={showNewFileInput ? "filename.tsx" : "folder name"}
                 className="h-7 text-xs"
               />
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCancelCreate}>
                 <X size={10} />
               </Button>
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">Enter 确认 · Esc 取消</div>
+            <div className="mt-1 text-xs text-muted-foreground">Enter to confirm · Esc to cancel</div>
           </div>
         )}
       </div>

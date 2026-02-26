@@ -51,7 +51,7 @@ export function SettingsDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[90dvh] flex flex-col">
         <DialogHeader className="px-2">
-          <DialogTitle>AI 模型设置</DialogTitle>
+          <DialogTitle>AI Model Settings</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 px-2 py-4 overflow-y-auto flex-1 min-h-0">
@@ -71,7 +71,7 @@ export function SettingsDialog({
               placeholder="sk-..."
             />
             <p className="text-xs text-muted-foreground">
-              你的 API 密钥，将保存在浏览器本地存储中
+              Your API key, will be saved in browser local storage
             </p>
           </div>
 
@@ -91,7 +91,7 @@ export function SettingsDialog({
               placeholder="https://api.openai.com/v1/chat/completions"
             />
             <p className="text-xs text-muted-foreground">
-              OpenAI 兼容的 API 端点地址
+              OpenAI compatible API endpoint
             </p>
           </div>
 
@@ -99,7 +99,7 @@ export function SettingsDialog({
           <div className="space-y-2">
             <Label htmlFor="model">
               <Cpu size={16} className="inline mr-1" />
-              模型名称
+              Model Name
             </Label>
             <Input
               id="model"
@@ -111,18 +111,18 @@ export function SettingsDialog({
               placeholder="gpt-5.3-codex"
             />
             <p className="text-xs text-muted-foreground">
-              AI 模型的名称，如 gpt-5.3-codex、deepseek-chat 等
+              Name of the AI model, such as gpt-5.3-codex, deepseek-chat, etc.
             </p>
           </div>
 
-          {/* ── 联网搜索设置 ── */}
+          {/* ── Web Search Settings ── */}
           <div className="border-t border-border/60 pt-4 mt-2">
             <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-3">
               <Search size={16} />
-              联网搜索（Tavily）
+              Web Search (Tavily)
             </h3>
             <p className="text-xs text-muted-foreground mb-3">
-              配置后，AI 将能够搜索网页和读取网页内容
+              After configuration, AI will be able to search the web and read web content
             </p>
 
             {/* Tavily API Key */}
@@ -144,7 +144,7 @@ export function SettingsDialog({
                 placeholder="tvly-..."
               />
               <p className="text-xs text-muted-foreground">
-                可选。配置后启用联网搜索和网页读取功能
+                Optional. Enable web search and web reading features after configuration
               </p>
             </div>
 
@@ -167,7 +167,7 @@ export function SettingsDialog({
                 placeholder="https://api.tavily.com"
               />
               <p className="text-xs text-muted-foreground">
-                可选。默认使用 Tavily 官方 API 地址
+                Optional. Use Tavily's official API address by default
               </p>
             </div>
           </div>
@@ -175,9 +175,9 @@ export function SettingsDialog({
 
         <DialogFooter className="flex-row justify-end">
           <Button variant="outline" onClick={onClose}>
-            取消
+            Cancel
           </Button>
-          <Button onClick={handleSave}>保存设置</Button>
+          <Button onClick={handleSave}>Save Settings</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

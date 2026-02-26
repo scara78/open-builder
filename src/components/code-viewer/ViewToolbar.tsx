@@ -48,7 +48,7 @@ export function ViewToolbar({
           className="gap-2"
         >
           <Eye size={16} />
-          预览
+          Preview
         </Button>
         <Button
           variant={viewMode === "code" ? "secondary" : "ghost"}
@@ -57,7 +57,7 @@ export function ViewToolbar({
           className="gap-2"
         >
           <Code2 size={16} />
-          代码
+          Code
         </Button>
       </div>
 
@@ -68,7 +68,7 @@ export function ViewToolbar({
               variant={deviceSize === "desktop" ? "secondary" : "ghost"}
               size="icon-sm"
               onClick={() => onDeviceSizeChange("desktop")}
-              title="桌面视图"
+              title="Desktop View"
               className="desktop"
             >
               <Monitor size={16} />
@@ -77,7 +77,7 @@ export function ViewToolbar({
               variant={deviceSize === "tablet" ? "secondary" : "ghost"}
               size="icon-sm"
               onClick={() => onDeviceSizeChange("tablet")}
-              title="平板视图"
+              title="Tablet View"
               className="tablet"
             >
               <Tablet size={16} />
@@ -86,7 +86,7 @@ export function ViewToolbar({
               variant={deviceSize === "mobile" ? "secondary" : "ghost"}
               size="icon-sm"
               onClick={() => onDeviceSizeChange("mobile")}
-              title="手机视图"
+              title="Mobile View"
               className="mobile"
             >
               <Smartphone size={16} />
@@ -99,7 +99,7 @@ export function ViewToolbar({
             variant="outline"
             size="icon-sm"
             onClick={() => downloadAsZip(files)}
-            title="下载项目"
+            title="Download Project"
           >
             <Download size={16} />
           </Button>

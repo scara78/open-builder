@@ -73,7 +73,7 @@ export function MessageBubble({
                   className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  重试
+                  Retry
                 </button>
               )}
             </div>
@@ -104,7 +104,7 @@ function ThinkingBlockCard({ content, isStreaming }: { content: string; isStream
         className="flex items-center gap-1.5 w-full px-3 py-2 text-muted-foreground hover:bg-muted/50 transition-colors"
       >
         <Brain className="w-3.5 h-3.5" />
-        <span className="font-medium">思考过程</span>
+        <span className="font-medium">Thinking Process</span>
         {expanded ? <ChevronDown className="w-3.5 h-3.5 ml-auto" /> : <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
       </button>
       {expanded && (

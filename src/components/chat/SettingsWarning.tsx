@@ -12,10 +12,10 @@ export function SettingsWarning({ onOpenSettings }: SettingsWarningProps) {
       <div className="flex items-start gap-3">
         <Settings size={20} className="text-yellow-600 mt-0.5 shrink-0" />
         <div className="flex-1">
-          <h3 className="font-medium text-yellow-900 text-sm mb-1">需要配置 AI 模型</h3>
-          <p className="text-xs text-yellow-800 mb-3">请先配置 API Key 和模型设置才能开始使用</p>
+          <h3 className="font-medium text-yellow-900 text-sm mb-1">AI Model Configuration Required</h3>
+          <p className="text-xs text-yellow-800 mb-3">Please configure API Key and model settings before you can start</p>
           <Button onClick={onOpenSettings} size="sm" className="h-8 bg-yellow-600 hover:bg-yellow-700">
-            打开设置
+            Open Settings
           </Button>
         </div>
       </div>

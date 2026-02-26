@@ -115,7 +115,7 @@ export function ChatInput({
             }}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
-            placeholder="描述你想要的应用..."
+            placeholder="Describe the app you want to create..."
             rows={1}
             disabled={isGenerating}
             className="pr-20 md:text-base resize-none overflow-y-auto min-h-0"
@@ -137,7 +137,7 @@ export function ChatInput({
                   size="icon"
                   variant="ghost"
                   className="w-7 h-7 text-muted-foreground hover:text-foreground"
-                  title="上传图片"
+                  title="Upload Image"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <ImagePlus size={16} />
@@ -151,7 +151,7 @@ export function ChatInput({
                 onClick={onStop}
                 variant={isHoveringStop ? "destructive" : "secondary"}
                 className="w-7 h-7 transition-all duration-200 rounded-full"
-                title="停止生成"
+                title="Stop Generation"
                 onMouseEnter={() => setIsHoveringStop(true)}
                 onMouseLeave={() => setIsHoveringStop(false)}
               >
@@ -172,7 +172,7 @@ export function ChatInput({
                 size="icon"
                 disabled={!hasContent}
                 className="w-7 h-7"
-                title="发送消息"
+                title="Send Message"
               >
                 <SendHorizonal size={16} />
               </Button>
