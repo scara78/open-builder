@@ -34,7 +34,7 @@ const PROVIDER_CONFIGS = {
     name: "OpenAI",
     apiUrl: "https://api.openai.com/v1/chat/completions",
     models: [
-      { id: "gpt-5.3-codex", name: "GPT-5.3 Codex" },
+      { id: "gpt-4o", name: "GPT-4o" },
       { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
       { id: "gpt-4", name: "GPT-4" },
       { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo" },
@@ -44,14 +44,13 @@ const PROVIDER_CONFIGS = {
     name: "OpenRouter",
     apiUrl: "https://openrouter.ai/api/v1/chat/completions",
     models: [
-      { id: "openai/gpt-5.3-codex", name: "OpenAI GPT-5.3 Codex" },
       { id: "qwen/qwen3.5-flash-02-23", name: "Qwen 3.5 Flash" },
       { id: "qwen/qwen3-coder-plus", name: "Qwen 3 Coder Plus" },
-      { id: "minimax/minimax-m2.5", name: "Minimax M2.5" },
-      { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2" },
-      { id: "moonshotai/kimi-k2-thinking", name: "Kimi K2 Thinking" },
       { id: "google/gemini-2.5-flash", name: "Gemini 2.5 Flash" },
       { id: "google/gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite" },
+      { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2" },
+      { id: "minimax/minimax-m2.5", name: "Minimax M2.5" },
+      { id: "moonshotai/kimi-k2-thinking", name: "Kimi K2 Thinking" },
     ],
   },
   deepseek: {
