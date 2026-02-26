@@ -7,6 +7,7 @@ export interface AISettings {
   apiKey: string;
   apiUrl: string;
   model: string;
+  provider: string; // New field for provider selection
 }
 
 export interface WebSearchSettings {
@@ -33,6 +34,7 @@ export const useSettingsStore = create<SettingsState>()(
         apiKey: "",
         apiUrl: "https://api.openai.com/v1/chat/completions",
         model: "gpt-5.3-codex",
+        provider: "openai", // Default provider
       },
       webSearch: {
         tavilyApiKey: "",

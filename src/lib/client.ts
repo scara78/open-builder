@@ -18,6 +18,8 @@ export interface OpenAIClientConfig {
   model?: string;
   /** Whether to enable streaming output */
   stream?: boolean;
+  /** Provider name */
+  provider?: string;
 }
 
 /**
@@ -39,6 +41,15 @@ export function createOpenAIGenerator(
     customTools,
     customToolHandler,
   };
+
+  // Add provider-specific headers if needed
+  if (config.provider === "openrouter") {
+    options.headers = {
+      "HTTP-Referer": window.location.origin,
+      "X-Title": "Open Builder",
+      ...options.headers,
+    };
+  }
 
   return new WebAppGenerator(options, events);
 }

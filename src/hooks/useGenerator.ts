@@ -65,6 +65,7 @@ export function useGenerator({
           apiUrl: settings.apiUrl,
           model: settings.model,
           stream: true,
+          provider: settings.provider,
         },
         {
           onText: (delta) => {
