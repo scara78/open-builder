@@ -50,6 +50,8 @@ const PROVIDER_CONFIGS = {
       { id: "minimax/minimax-m2.5", name: "Minimax M2.5" },
       { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2" },
       { id: "moonshotai/kimi-k2-thinking", name: "Kimi K2 Thinking" },
+      { id: "google/gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+      { id: "google/gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite" },
     ],
   },
   deepseek: {
