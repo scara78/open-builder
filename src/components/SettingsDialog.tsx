@@ -38,6 +38,7 @@ const PROVIDER_CONFIGS = {
       { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
       { id: "gpt-4", name: "GPT-4" },
       { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo" },
+      { id: "gemini-3-flash", name: "gemini-3-flash" },
     ],
   },
   openrouter: {
