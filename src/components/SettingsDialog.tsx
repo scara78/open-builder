@@ -66,16 +66,41 @@ const PROVIDER_CONFIGS = {
   },
 };
 
+/**
+ * Derives the /models endpoint from any OpenAI-compatible API URL.
+ * Strategy: find the base up to /v1 (or similar versioned path) and append /models.
+ * Examples:
+ *   https://ruter1.scara.ovh/v1/chat/completions  → https://ruter1.scara.ovh/v1/models
+ *   https://api.openai.com/v1/chat/completions     → https://api.openai.com/v1/models
+ *   https://api.openai.com/v1/models               → https://api.openai.com/v1/models
+ */
 function deriveModelsUrl(apiUrl: string): string {
   if (!apiUrl) return "";
-  if (apiUrl.includes("/chat/completions")) {
-    return apiUrl.replace(/\/chat\/completions\/?$/, "/models");
-  }
+
+  // Already a models endpoint
   if (apiUrl.endsWith("/models") || apiUrl.endsWith("/models/")) {
-    return apiUrl;
+    return apiUrl.replace(/\/+$/, "");
   }
-  const base = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
-  return `${base}/models`;
+
+  // Find the versioned base path (e.g. /v1, /v2, /api/v1, etc.)
+  const versionMatch = apiUrl.match(/^(https?:\/\/.+?\/v\d+)/i);
+  if (versionMatch) {
+    return `${versionMatch[1]}/models`;
+  }
+
+  // Fallback: strip everything after the last slash segment that looks like a path
+  // and append /models
+  const url = new URL(apiUrl);
+  // Walk up path segments until we find something sensible
+  const parts = url.pathname.replace(/\/$/, "").split("/");
+  // Remove last segment (e.g. "completions", "completion", "chat")
+  // Keep going up until we hit a version segment or run out
+  let i = parts.length - 1;
+  while (i > 0 && !parts[i].match(/^v\d+$/i)) {
+    i--;
+  }
+  const basePath = parts.slice(0, i + 1).join("/");
+  return `${url.protocol}//${url.host}${basePath}/models`;
 }
 
 export function SettingsDialog({
@@ -92,7 +117,6 @@ export function SettingsDialog({
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Use refs to avoid stale closures in the fetch function
   const apiUrlRef = useRef(formData.apiUrl);
   const apiKeyRef = useRef(formData.apiKey);
   apiUrlRef.current = formData.apiUrl;
@@ -113,6 +137,11 @@ export function SettingsDialog({
     }
 
     const modelsUrl = deriveModelsUrl(url);
+    if (!modelsUrl) {
+      setFetchError("URL invalid.");
+      return;
+    }
+
     setIsLoadingModels(true);
     setFetchError(null);
     setFetchedModels([]);
@@ -129,7 +158,7 @@ export function SettingsDialog({
       const text = await res.text();
 
       if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${text.slice(0, 120)}`);
+        throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`);
       }
 
       let json: any;
@@ -161,12 +190,12 @@ export function SettingsDialog({
     }
   };
 
-  // Auto-fetch when dialog opens (with debounce)
+  // Auto-fetch when dialog opens
   useEffect(() => {
     if (!isOpen) return;
     const timer = setTimeout(() => {
       doFetch(apiUrlRef.current, apiKeyRef.current);
-    }, 700);
+    }, 500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -205,6 +234,8 @@ export function SettingsDialog({
     fetchedModels.length > 0
       ? fetchedModels
       : (currentProviderConfig?.models ?? []);
+
+  const modelsUrl = deriveModelsUrl(formData.apiUrl);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -262,9 +293,11 @@ export function SettingsDialog({
               onChange={(e) => setFormData((p) => ({ ...p, apiUrl: e.target.value }))}
               placeholder="https://ruter1.scara.ovh/v1/chat/completions"
             />
-            <p className="text-[10px] text-muted-foreground">
-              Modele detectate automat din: <span className="font-mono">{deriveModelsUrl(formData.apiUrl) || "—"}</span>
-            </p>
+            {modelsUrl && (
+              <p className="text-[10px] text-muted-foreground">
+                Modele din: <span className="font-mono text-foreground">{modelsUrl}</span>
+              </p>
+            )}
           </div>
 
           {/* Model selector */}
@@ -286,7 +319,6 @@ export function SettingsDialog({
               </Button>
             </div>
 
-            {/* Status messages */}
             {isLoadingModels && (
               <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                 <RefreshCw size={10} className="animate-spin" /> Se detectează agenții...
@@ -303,7 +335,6 @@ export function SettingsDialog({
               </p>
             )}
 
-            {/* Dropdown + manual input */}
             <div className="flex gap-2">
               <div className="flex-1">
                 <Select
