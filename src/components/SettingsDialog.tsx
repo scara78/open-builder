@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Key, Globe, Cpu, Search, RefreshCw } from "lucide-react";
+import { Key, Globe, Cpu, Search, RefreshCw, AlertCircle } from "lucide-react";
 import { AISettings, WebSearchSettings } from "../store/settings";
 import {
   Dialog,
@@ -79,6 +79,7 @@ export function SettingsDialog({
     useState<WebSearchSettings>(webSearchSettings);
   const [fetchedModels, setFetchedModels] = useState<ModelOption[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     setFormData(settings);
@@ -92,10 +93,12 @@ export function SettingsDialog({
     if (!url || !key) return;
     
     setIsLoadingModels(true);
+    setFetchError(null);
+    
     try {
       let modelsUrl = url;
       
-      // Robust URL derivation for OpenAI-compatible endpoints
+      // Derive models URL
       if (url.includes("/chat/completions")) {
         modelsUrl = url.replace(/\/chat\/completions\/?$/, "/models");
       } else if (!url.endsWith("/models") && !url.endsWith("/models/")) {
@@ -104,38 +107,38 @@ export function SettingsDialog({
       }
       
       const res = await fetch(modelsUrl, {
+        method: "GET",
         headers: {
           "Authorization": `Bearer ${key}`,
-          "Content-Type": "application/json",
+          "Accept": "application/json",
         },
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`Eroare API: ${res.status}`);
+      }
       
       const data = await res.json();
       let models: ModelOption[] = [];
 
-      // Handle standard OpenAI "list" object with "data" array
-      if (data && data.object === "list" && Array.isArray(data.data)) {
-        models = data.data.map((m: any) => ({
-          id: m.id,
-          name: m.id,
-        }));
-      } else if (data && Array.isArray(data.data)) {
-        models = data.data.map((m: any) => ({
-          id: m.id,
-          name: m.id,
-        }));
-      } else if (data && Array.isArray(data)) {
-        models = data.map((m: any) => ({
-          id: m.id || m,
-          name: m.id || m,
-        }));
+      // Handle the specific structure: { object: "list", data: [...] }
+      const rawData = data.data || data;
+      
+      if (Array.isArray(rawData)) {
+        models = rawData.map((m: any) => ({
+          id: m.id || (typeof m === 'string' ? m : ''),
+          name: m.id || (typeof m === 'string' ? m : 'Unknown Model'),
+        })).filter(m => m.id);
+      }
+
+      if (models.length === 0) {
+        throw new Error("Nu s-au găsit modele în răspuns.");
       }
 
       setFetchedModels(models);
-    } catch (err) {
-      console.error("Error fetching models:", err);
+    } catch (err: any) {
+      console.error("Fetch models failed:", err);
+      setFetchError(err.message || "Eroare necunoscută");
       setFetchedModels([]);
     } finally {
       setIsLoadingModels(false);
@@ -147,7 +150,7 @@ export function SettingsDialog({
     if (isOpen && formData.apiKey && formData.apiUrl) {
       const timer = setTimeout(() => {
         fetchModels(formData.apiUrl, formData.apiKey);
-      }, 500);
+      }, 600);
       return () => clearTimeout(timer);
     }
   }, [isOpen, formData.apiUrl, formData.apiKey, fetchModels]);
@@ -162,6 +165,7 @@ export function SettingsDialog({
         model: config.models[0]?.id || formData.model,
       });
       setFetchedModels([]);
+      setFetchError(null);
     }
   };
 
@@ -256,7 +260,7 @@ export function SettingsDialog({
                   onValueChange={(model) => setFormData({ ...formData, model })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={isLoadingModels ? "Fetching..." : "Select model"} />
+                    <SelectValue placeholder={isLoadingModels ? "Se încarcă..." : "Alege modelul"} />
                   </SelectTrigger>
                   <SelectContent>
                     {displayModels.map((model) => (
@@ -265,21 +269,26 @@ export function SettingsDialog({
                       </SelectItem>
                     ))}
                     {displayModels.length === 0 && !isLoadingModels && (
-                      <SelectItem value="none" disabled>No models detected</SelectItem>
+                      <SelectItem value="none" disabled>Niciun model detectat</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
               </div>
               <Input
                 className="w-1/3"
-                placeholder="Manual ID..."
+                placeholder="ID manual..."
                 value={formData.model}
                 onChange={(e) => setFormData({ ...formData, model: e.target.value })}
               />
             </div>
+            {fetchError && (
+              <p className="text-[10px] text-destructive flex items-center gap-1">
+                <AlertCircle size={10} /> {fetchError}
+              </p>
+            )}
             {fetchedModels.length > 0 && (
               <p className="text-[10px] text-green-600 font-medium">
-                ✓ {fetchedModels.length} agents detected automatically
+                ✓ {fetchedModels.length} agenți detectați automat
               </p>
             )}
           </div>
@@ -332,9 +341,9 @@ export function SettingsDialog({
 
         <DialogFooter className="flex-row justify-end">
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            Anulează
           </Button>
-          <Button onClick={handleSave}>Save Settings</Button>
+          <Button onClick={handleSave}>Salvează Setările</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
