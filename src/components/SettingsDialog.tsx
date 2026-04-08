@@ -93,11 +93,12 @@ export function SettingsDialog({
     
     setIsLoadingModels(true);
     try {
-      // Derive models URL: replace /chat/completions with /models or append /models to base
       let modelsUrl = url;
+      
+      // Robust URL derivation
       if (url.includes("/chat/completions")) {
         modelsUrl = url.replace(/\/chat\/completions\/?$/, "/models");
-      } else {
+      } else if (!url.endsWith("/models") && !url.endsWith("/models/")) {
         const base = url.endsWith("/") ? url.slice(0, -1) : url;
         modelsUrl = `${base}/models`;
       }
@@ -112,18 +113,25 @@ export function SettingsDialog({
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       
       const data = await res.json();
+      let models: ModelOption[] = [];
+
       if (data && Array.isArray(data.data)) {
-        const models = data.data.map((m: any) => ({
+        models = data.data.map((m: any) => ({
           id: m.id,
           name: m.id,
         }));
-        setFetchedModels(models);
-      } else if (data && Array.isArray(data)) { // Some APIs return array directly
-        const models = data.map((m: any) => ({
+      } else if (data && Array.isArray(data)) {
+        models = data.map((m: any) => ({
           id: m.id || m,
           name: m.id || m,
         }));
-        setFetchedModels(models);
+      }
+
+      setFetchedModels(models);
+      
+      // If current model is not in the new list and list is not empty, select the first one
+      if (models.length > 0 && !models.find(m => m.id === formData.model)) {
+        setFormData(prev => ({ ...prev, model: models[0].id }));
       }
     } catch (err) {
       console.error("Error fetching models:", err);
@@ -131,7 +139,7 @@ export function SettingsDialog({
     } finally {
       setIsLoadingModels(false);
     }
-  }, []);
+  }, [formData.model]);
 
   // Auto-fetch when dialog opens or credentials change
   useEffect(() => {
@@ -228,7 +236,7 @@ export function SettingsDialog({
             <div className="flex items-center justify-between">
               <Label htmlFor="model">
                 <Cpu size={16} className="inline mr-1" />
-                Model ID
+                Model / Agent
               </Label>
               <Button 
                 variant="ghost" 
@@ -247,7 +255,7 @@ export function SettingsDialog({
                   onValueChange={(model) => setFormData({ ...formData, model })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={isLoadingModels ? "Loading..." : "Select model"} />
+                    <SelectValue placeholder={isLoadingModels ? "Fetching..." : "Select model"} />
                   </SelectTrigger>
                   <SelectContent>
                     {displayModels.map((model) => (
@@ -256,7 +264,7 @@ export function SettingsDialog({
                       </SelectItem>
                     ))}
                     {displayModels.length === 0 && !isLoadingModels && (
-                      <SelectItem value="none" disabled>No models found</SelectItem>
+                      <SelectItem value="none" disabled>No models detected</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
@@ -269,8 +277,8 @@ export function SettingsDialog({
               />
             </div>
             {fetchedModels.length > 0 && (
-              <p className="text-[10px] text-muted-foreground">
-                ✓ Detected {fetchedModels.length} models from API
+              <p className="text-[10px] text-green-600 font-medium">
+                ✓ {fetchedModels.length} agents detected automatically
               </p>
             )}
           </div>
