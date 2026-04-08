@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Key, Globe, Cpu, Search } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Key, Globe, Cpu, Search, RefreshCw } from "lucide-react";
 import { AISettings, WebSearchSettings } from "../store/settings";
 import {
   Dialog,
@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -28,7 +29,11 @@ interface SettingsDialogProps {
   onSaveWebSearch: (settings: WebSearchSettings) => void;
 }
 
-// Provider configurations
+interface ModelOption {
+  id: string;
+  name: string;
+}
+
 const PROVIDER_CONFIGS = {
   openai: {
     name: "OpenAI",
@@ -72,6 +77,8 @@ export function SettingsDialog({
   const [formData, setFormData] = useState<AISettings>(settings);
   const [webSearchForm, setWebSearchForm] =
     useState<WebSearchSettings>(webSearchSettings);
+  const [fetchedModels, setFetchedModels] = useState<ModelOption[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
 
   useEffect(() => {
     setFormData(settings);
@@ -80,6 +87,61 @@ export function SettingsDialog({
   useEffect(() => {
     setWebSearchForm(webSearchSettings);
   }, [webSearchSettings]);
+
+  const fetchModels = useCallback(async (url: string, key: string) => {
+    if (!url || !key) return;
+    
+    setIsLoadingModels(true);
+    try {
+      // Derive models URL: replace /chat/completions with /models or append /models to base
+      let modelsUrl = url;
+      if (url.includes("/chat/completions")) {
+        modelsUrl = url.replace(/\/chat\/completions\/?$/, "/models");
+      } else {
+        const base = url.endsWith("/") ? url.slice(0, -1) : url;
+        modelsUrl = `${base}/models`;
+      }
+      
+      const res = await fetch(modelsUrl, {
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      
+      const data = await res.json();
+      if (data && Array.isArray(data.data)) {
+        const models = data.data.map((m: any) => ({
+          id: m.id,
+          name: m.id,
+        }));
+        setFetchedModels(models);
+      } else if (data && Array.isArray(data)) { // Some APIs return array directly
+        const models = data.map((m: any) => ({
+          id: m.id || m,
+          name: m.id || m,
+        }));
+        setFetchedModels(models);
+      }
+    } catch (err) {
+      console.error("Error fetching models:", err);
+      setFetchedModels([]);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  }, []);
+
+  // Auto-fetch when dialog opens or credentials change
+  useEffect(() => {
+    if (isOpen && formData.apiKey && formData.apiUrl) {
+      const timer = setTimeout(() => {
+        fetchModels(formData.apiUrl, formData.apiKey);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, formData.apiUrl, formData.apiKey, fetchModels]);
 
   const handleProviderChange = (provider: string) => {
     const config = PROVIDER_CONFIGS[provider as keyof typeof PROVIDER_CONFIGS];
@@ -90,6 +152,7 @@ export function SettingsDialog({
         apiUrl: config.apiUrl,
         model: config.models[0]?.id || formData.model,
       });
+      setFetchedModels([]);
     }
   };
 
@@ -100,7 +163,7 @@ export function SettingsDialog({
   };
 
   const currentProviderConfig = PROVIDER_CONFIGS[formData.provider as keyof typeof PROVIDER_CONFIGS];
-  const displayModels = currentProviderConfig?.models || [];
+  const displayModels = fetchedModels.length > 0 ? fetchedModels : (currentProviderConfig?.models || []);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -162,37 +225,54 @@ export function SettingsDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="model">
-              <Cpu size={16} className="inline mr-1" />
-              Model ID
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="model">
+                <Cpu size={16} className="inline mr-1" />
+                Model ID
+              </Label>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6" 
+                onClick={() => fetchModels(formData.apiUrl, formData.apiKey)}
+                disabled={isLoadingModels || !formData.apiKey}
+              >
+                <RefreshCw size={12} className={cn(isLoadingModels && "animate-spin")} />
+              </Button>
+            </div>
             <div className="flex gap-2">
-              {displayModels.length > 0 ? (
-                <div className="flex-1">
-                  <Select 
-                    value={formData.model} 
-                    onValueChange={(model) => setFormData({ ...formData, model })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {displayModels.map((model) => (
-                        <SelectItem key={model.id} value={model.id}>
-                          {model.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : null}
+              <div className="flex-1">
+                <Select 
+                  value={formData.model} 
+                  onValueChange={(model) => setFormData({ ...formData, model })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingModels ? "Loading..." : "Select model"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {displayModels.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        {model.name}
+                      </SelectItem>
+                    ))}
+                    {displayModels.length === 0 && !isLoadingModels && (
+                      <SelectItem value="none" disabled>No models found</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
               <Input
-                className={displayModels.length > 0 ? "w-1/2" : "w-full"}
-                placeholder="Enter model ID (e.g. gpt-4o)"
+                className="w-1/3"
+                placeholder="Manual ID..."
                 value={formData.model}
                 onChange={(e) => setFormData({ ...formData, model: e.target.value })}
               />
             </div>
+            {fetchedModels.length > 0 && (
+              <p className="text-[10px] text-muted-foreground">
+                ✓ Detected {fetchedModels.length} models from API
+              </p>
+            )}
           </div>
 
           <div className="border-t border-border/60 pt-4 mt-2">
