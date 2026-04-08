@@ -36,20 +36,25 @@ interface ModelOption {
 
 // Provider configurations
 const PROVIDER_CONFIGS = {
-  openai: {
-    name: "OpenAI",
-    apiUrl: "https://api.openai.com/v1/chat/completions",
-    models: [
-      { id: "gpt-4o", name: "GPT-4o" },
-      { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
-    ],
-  },
   openrouter: {
     name: "OpenRouter",
     apiUrl: "https://openrouter.ai/api/v1/chat/completions",
     models: [
       { id: "qwen/qwen3.5-flash-02-23", name: "Qwen 3.5 Flash" },
       { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2" },
+    ],
+  },
+  scara: {
+    name: "Scara AI (Custom)",
+    apiUrl: "https://ruter1.scara.ovh/v1/chat/completions",
+    models: [],
+  },
+  openai: {
+    name: "OpenAI",
+    apiUrl: "https://api.openai.com/v1/chat/completions",
+    models: [
+      { id: "gpt-4o", name: "GPT-4o" },
+      { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
     ],
   },
   deepseek: {
@@ -61,7 +66,7 @@ const PROVIDER_CONFIGS = {
     ],
   },
   custom: {
-    name: "Custom / Local",
+    name: "Local (Ollama/vLLM)",
     apiUrl: "http://localhost:11434/v1/chat/completions",
     models: [],
   }
@@ -94,8 +99,17 @@ export function SettingsDialog({
     
     setIsLoadingModels(true);
     try {
-      // Derive models URL from chat completions URL (usually /v1/models)
-      const modelsUrl = url.replace(/\/chat\/completions\/?$/, "/models");
+      // Robust URL derivation for /models
+      let modelsUrl = url;
+      if (url.endsWith("/chat/completions")) {
+        modelsUrl = url.replace(/\/chat\/completions$/, "/models");
+      } else if (url.endsWith("/chat/completions/")) {
+        modelsUrl = url.replace(/\/chat\/completions\/$/, "/models");
+      } else {
+        // If it's a base URL like .../v1, append /models
+        const base = url.endsWith("/") ? url.slice(0, -1) : url;
+        modelsUrl = `${base}/models`;
+      }
       
       const res = await fetch(modelsUrl, {
         headers: {
@@ -104,7 +118,7 @@ export function SettingsDialog({
         },
       });
 
-      if (!res.ok) throw new Error("Failed to fetch models");
+      if (!res.ok) throw new Error(`Failed to fetch models: ${res.status}`);
       
       const data = await res.json();
       if (data && Array.isArray(data.data)) {
@@ -122,7 +136,6 @@ export function SettingsDialog({
     }
   }, []);
 
-  // Auto-fetch models when API key or URL changes and dialog is open
   useEffect(() => {
     if (isOpen && formData.apiKey && formData.apiUrl) {
       const timer = setTimeout(() => {
@@ -162,7 +175,6 @@ export function SettingsDialog({
         </DialogHeader>
 
         <div className="space-y-4 px-2 py-4 overflow-y-auto flex-1 min-h-0">
-          {/* Provider Selection */}
           <div className="space-y-2">
             <Label htmlFor="provider">
               <Cpu size={16} className="inline mr-1" />
@@ -182,7 +194,6 @@ export function SettingsDialog({
             </Select>
           </div>
 
-          {/* API Key */}
           <div className="space-y-2">
             <Label htmlFor="apiKey">
               <Key size={16} className="inline mr-1" />
@@ -199,7 +210,6 @@ export function SettingsDialog({
             />
           </div>
 
-          {/* API URL */}
           <div className="space-y-2">
             <Label htmlFor="apiUrl">
               <Globe size={16} className="inline mr-1" />
@@ -212,11 +222,10 @@ export function SettingsDialog({
               onChange={(e) =>
                 setFormData({ ...formData, apiUrl: e.target.value })
               }
-              placeholder={currentProviderConfig?.apiUrl || "API endpoint URL"}
+              placeholder="https://api.openai.com/v1/chat/completions"
             />
           </div>
 
-          {/* Model Selection */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="model">
@@ -269,7 +278,6 @@ export function SettingsDialog({
             </p>
           </div>
 
-          {/* ── Web Search Settings ── */}
           <div className="border-t border-border/60 pt-4 mt-2">
             <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-3">
               <Search size={16} />
