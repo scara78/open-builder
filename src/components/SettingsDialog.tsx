@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Key, Globe, Cpu, Search } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Key, Globe, Cpu, Search, RefreshCw } from "lucide-react";
 import { AISettings, WebSearchSettings } from "../store/settings";
 import {
   Dialog,
@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -28,6 +29,11 @@ interface SettingsDialogProps {
   onSaveWebSearch: (settings: WebSearchSettings) => void;
 }
 
+interface ModelOption {
+  id: string;
+  name: string;
+}
+
 // Provider configurations
 const PROVIDER_CONFIGS = {
   openai: {
@@ -36,9 +42,6 @@ const PROVIDER_CONFIGS = {
     models: [
       { id: "gpt-4o", name: "GPT-4o" },
       { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
-      { id: "gpt-4", name: "GPT-4" },
-      { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo" },
-      { id: "gemini-3-flash", name: "gemini-3-flash" },
     ],
   },
   openrouter: {
@@ -46,12 +49,7 @@ const PROVIDER_CONFIGS = {
     apiUrl: "https://openrouter.ai/api/v1/chat/completions",
     models: [
       { id: "qwen/qwen3.5-flash-02-23", name: "Qwen 3.5 Flash" },
-      { id: "qwen/qwen3-coder-plus", name: "Qwen 3 Coder Plus" },
-      { id: "google/gemini-2.5-flash", name: "Gemini 2.5 Flash" },
-      { id: "google/gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite" },
       { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2" },
-      { id: "minimax/minimax-m2.5", name: "Minimax M2.5" },
-      { id: "moonshotai/kimi-k2-thinking", name: "Kimi K2 Thinking" },
     ],
   },
   deepseek: {
@@ -59,9 +57,14 @@ const PROVIDER_CONFIGS = {
     apiUrl: "https://api.deepseek.com/v1/chat/completions",
     models: [
       { id: "deepseek-chat", name: "DeepSeek Chat" },
-      { id: "deepseek-coder", name: "DeepSeek Coder" },
+      { id: "deepseek-reasoner", name: "DeepSeek Reasoner" },
     ],
   },
+  custom: {
+    name: "Custom / Local",
+    apiUrl: "http://localhost:11434/v1/chat/completions",
+    models: [],
+  }
 };
 
 export function SettingsDialog({
@@ -75,6 +78,8 @@ export function SettingsDialog({
   const [formData, setFormData] = useState<AISettings>(settings);
   const [webSearchForm, setWebSearchForm] =
     useState<WebSearchSettings>(webSearchSettings);
+  const [fetchedModels, setFetchedModels] = useState<ModelOption[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
 
   useEffect(() => {
     setFormData(settings);
@@ -83,6 +88,49 @@ export function SettingsDialog({
   useEffect(() => {
     setWebSearchForm(webSearchSettings);
   }, [webSearchSettings]);
+
+  const fetchModels = useCallback(async (url: string, key: string) => {
+    if (!url || !key) return;
+    
+    setIsLoadingModels(true);
+    try {
+      // Derive models URL from chat completions URL (usually /v1/models)
+      const modelsUrl = url.replace(/\/chat\/completions\/?$/, "/models");
+      
+      const res = await fetch(modelsUrl, {
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch models");
+      
+      const data = await res.json();
+      if (data && Array.isArray(data.data)) {
+        const models = data.data.map((m: any) => ({
+          id: m.id,
+          name: m.id,
+        }));
+        setFetchedModels(models);
+      }
+    } catch (err) {
+      console.error("Error fetching models:", err);
+      setFetchedModels([]);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  }, []);
+
+  // Auto-fetch models when API key or URL changes and dialog is open
+  useEffect(() => {
+    if (isOpen && formData.apiKey && formData.apiUrl) {
+      const timer = setTimeout(() => {
+        fetchModels(formData.apiUrl, formData.apiKey);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, formData.apiUrl, formData.apiKey, fetchModels]);
 
   const handleProviderChange = (provider: string) => {
     const config = PROVIDER_CONFIGS[provider as keyof typeof PROVIDER_CONFIGS];
@@ -93,6 +141,7 @@ export function SettingsDialog({
         apiUrl: config.apiUrl,
         model: config.models[0]?.id || "",
       });
+      setFetchedModels([]);
     }
   };
 
@@ -103,6 +152,7 @@ export function SettingsDialog({
   };
 
   const currentProviderConfig = PROVIDER_CONFIGS[formData.provider as keyof typeof PROVIDER_CONFIGS];
+  const displayModels = fetchedModels.length > 0 ? fetchedModels : (currentProviderConfig?.models || []);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -130,9 +180,6 @@ export function SettingsDialog({
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
-              Select your preferred AI provider
-            </p>
           </div>
 
           {/* API Key */}
@@ -150,9 +197,6 @@ export function SettingsDialog({
               }
               placeholder="sk-..."
             />
-            <p className="text-xs text-muted-foreground">
-              Your API key, will be saved in browser local storage
-            </p>
           </div>
 
           {/* API URL */}
@@ -170,34 +214,58 @@ export function SettingsDialog({
               }
               placeholder={currentProviderConfig?.apiUrl || "API endpoint URL"}
             />
-            <p className="text-xs text-muted-foreground">
-              API endpoint URL for the selected provider
-            </p>
           </div>
 
           {/* Model Selection */}
           <div className="space-y-2">
-            <Label htmlFor="model">
-              <Cpu size={16} className="inline mr-1" />
-              Model
-            </Label>
-            <Select 
-              value={formData.model} 
-              onValueChange={(model) => setFormData({ ...formData, model })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select model" />
-              </SelectTrigger>
-              <SelectContent>
-                {currentProviderConfig?.models.map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    {model.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="model">
+                <Cpu size={16} className="inline mr-1" />
+                Model
+              </Label>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6" 
+                onClick={() => fetchModels(formData.apiUrl, formData.apiKey)}
+                disabled={isLoadingModels || !formData.apiKey}
+              >
+                <RefreshCw size={12} className={cn(isLoadingModels && "animate-spin")} />
+              </Button>
+            </div>
+            
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Select 
+                  value={formData.model} 
+                  onValueChange={(model) => setFormData({ ...formData, model })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingModels ? "Loading models..." : "Select model"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {displayModels.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        {model.name}
+                      </SelectItem>
+                    ))}
+                    {displayModels.length === 0 && !isLoadingModels && (
+                      <SelectItem value="manual" disabled>No models found</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Input
+                className="w-1/3"
+                placeholder="Or type ID..."
+                value={formData.model}
+                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+              />
+            </div>
             <p className="text-xs text-muted-foreground">
-              Select the AI model to use for code generation
+              {fetchedModels.length > 0 
+                ? `Found ${fetchedModels.length} models from API` 
+                : "Select from list or enter model ID manually"}
             </p>
           </div>
 
@@ -207,11 +275,7 @@ export function SettingsDialog({
               <Search size={16} />
               Web Search (Tavily)
             </h3>
-            <p className="text-xs text-muted-foreground mb-3">
-              After configuration, AI will be able to search the web and read web content
-            </p>
-
-            {/* Tavily API Key */}
+            
             <div className="space-y-2">
               <Label htmlFor="tavilyApiKey">
                 <Key size={16} className="inline mr-1" />
@@ -229,12 +293,8 @@ export function SettingsDialog({
                 }
                 placeholder="tvly-..."
               />
-              <p className="text-xs text-muted-foreground">
-                Optional. Enable web search and web reading features after configuration
-              </p>
             </div>
 
-            {/* Tavily API URL */}
             <div className="space-y-2 mt-3">
               <Label htmlFor="tavilyApiUrl">
                 <Globe size={16} className="inline mr-1" />
@@ -252,9 +312,6 @@ export function SettingsDialog({
                 }
                 placeholder="https://api.tavily.com"
               />
-              <p className="text-xs text-muted-foreground">
-                Optional. Use Tavily's official API address by default
-              </p>
             </div>
           </div>
         </div>
