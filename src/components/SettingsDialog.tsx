@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { Key, Globe, Cpu, Search, RefreshCw, AlertCircle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Key, Globe, Cpu, Search, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
 import { AISettings, WebSearchSettings } from "../store/settings";
 import {
   Dialog,
@@ -38,7 +38,7 @@ const PROVIDER_CONFIGS = {
   custom: {
     name: "Custom / Scara AI",
     apiUrl: "",
-    models: [],
+    models: [] as ModelOption[],
   },
   openai: {
     name: "OpenAI",
@@ -46,7 +46,7 @@ const PROVIDER_CONFIGS = {
     models: [
       { id: "gpt-4o", name: "GPT-4o" },
       { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
-    ],
+    ] as ModelOption[],
   },
   openrouter: {
     name: "OpenRouter",
@@ -54,7 +54,7 @@ const PROVIDER_CONFIGS = {
     models: [
       { id: "qwen/qwen3.5-flash-02-23", name: "Qwen 3.5 Flash" },
       { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2" },
-    ],
+    ] as ModelOption[],
   },
   deepseek: {
     name: "DeepSeek",
@@ -62,9 +62,21 @@ const PROVIDER_CONFIGS = {
     models: [
       { id: "deepseek-chat", name: "DeepSeek Chat" },
       { id: "deepseek-reasoner", name: "DeepSeek Reasoner" },
-    ],
-  }
+    ] as ModelOption[],
+  },
 };
+
+function deriveModelsUrl(apiUrl: string): string {
+  if (!apiUrl) return "";
+  if (apiUrl.includes("/chat/completions")) {
+    return apiUrl.replace(/\/chat\/completions\/?$/, "/models");
+  }
+  if (apiUrl.endsWith("/models") || apiUrl.endsWith("/models/")) {
+    return apiUrl;
+  }
+  const base = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
+  return `${base}/models`;
+}
 
 export function SettingsDialog({
   isOpen,
@@ -75,11 +87,16 @@ export function SettingsDialog({
   onSaveWebSearch,
 }: SettingsDialogProps) {
   const [formData, setFormData] = useState<AISettings>(settings);
-  const [webSearchForm, setWebSearchForm] =
-    useState<WebSearchSettings>(webSearchSettings);
+  const [webSearchForm, setWebSearchForm] = useState<WebSearchSettings>(webSearchSettings);
   const [fetchedModels, setFetchedModels] = useState<ModelOption[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Use refs to avoid stale closures in the fetch function
+  const apiUrlRef = useRef(formData.apiUrl);
+  const apiKeyRef = useRef(formData.apiKey);
+  apiUrlRef.current = formData.apiUrl;
+  apiKeyRef.current = formData.apiKey;
 
   useEffect(() => {
     setFormData(settings);
@@ -89,84 +106,92 @@ export function SettingsDialog({
     setWebSearchForm(webSearchSettings);
   }, [webSearchSettings]);
 
-  const fetchModels = useCallback(async (url: string, key: string) => {
-    if (!url || !key) return;
-    
+  const doFetch = async (url: string, key: string) => {
+    if (!url || !key) {
+      setFetchError("Introdu API URL și API Key mai întâi.");
+      return;
+    }
+
+    const modelsUrl = deriveModelsUrl(url);
     setIsLoadingModels(true);
     setFetchError(null);
-    
+    setFetchedModels([]);
+
     try {
-      let modelsUrl = url;
-      
-      // Derive models URL
-      if (url.includes("/chat/completions")) {
-        modelsUrl = url.replace(/\/chat\/completions\/?$/, "/models");
-      } else if (!url.endsWith("/models") && !url.endsWith("/models/")) {
-        const base = url.endsWith("/") ? url.slice(0, -1) : url;
-        modelsUrl = `${base}/models`;
-      }
-      
       const res = await fetch(modelsUrl, {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${key}`,
-          "Accept": "application/json",
+          Authorization: `Bearer ${key}`,
+          Accept: "application/json",
         },
       });
 
+      const text = await res.text();
+
       if (!res.ok) {
-        throw new Error(`Eroare API: ${res.status}`);
-      }
-      
-      const data = await res.json();
-      let models: ModelOption[] = [];
-
-      // Handle the specific structure: { object: "list", data: [...] }
-      const rawData = data.data || data;
-      
-      if (Array.isArray(rawData)) {
-        models = rawData.map((m: any) => ({
-          id: m.id || (typeof m === 'string' ? m : ''),
-          name: m.id || (typeof m === 'string' ? m : 'Unknown Model'),
-        })).filter(m => m.id);
+        throw new Error(`HTTP ${res.status}: ${text.slice(0, 120)}`);
       }
 
-      if (models.length === 0) {
+      let json: any;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        throw new Error("Răspunsul nu este JSON valid.");
+      }
+
+      // Support { object: "list", data: [...] } and plain arrays
+      const raw: any[] = Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
+
+      if (raw.length === 0) {
         throw new Error("Nu s-au găsit modele în răspuns.");
       }
 
+      const models: ModelOption[] = raw
+        .map((m: any) => ({
+          id: typeof m === "string" ? m : String(m?.id ?? ""),
+          name: typeof m === "string" ? m : String(m?.id ?? ""),
+        }))
+        .filter((m) => m.id);
+
       setFetchedModels(models);
     } catch (err: any) {
-      console.error("Fetch models failed:", err);
-      setFetchError(err.message || "Eroare necunoscută");
-      setFetchedModels([]);
+      setFetchError(err.message ?? "Eroare necunoscută");
     } finally {
       setIsLoadingModels(false);
     }
-  }, []);
+  };
 
-  // Auto-fetch when dialog opens or credentials change
+  // Auto-fetch when dialog opens (with debounce)
   useEffect(() => {
-    if (isOpen && formData.apiKey && formData.apiUrl) {
-      const timer = setTimeout(() => {
-        fetchModels(formData.apiUrl, formData.apiKey);
-      }, 600);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, formData.apiUrl, formData.apiKey, fetchModels]);
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
+      doFetch(apiUrlRef.current, apiKeyRef.current);
+    }, 700);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // Re-fetch when URL or key changes (debounced)
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
+      doFetch(formData.apiUrl, formData.apiKey);
+    }, 800);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.apiUrl, formData.apiKey]);
 
   const handleProviderChange = (provider: string) => {
     const config = PROVIDER_CONFIGS[provider as keyof typeof PROVIDER_CONFIGS];
-    if (config) {
-      setFormData({
-        ...formData,
-        provider,
-        apiUrl: config.apiUrl,
-        model: config.models[0]?.id || formData.model,
-      });
-      setFetchedModels([]);
-      setFetchError(null);
-    }
+    if (!config) return;
+    setFormData((prev) => ({
+      ...prev,
+      provider,
+      apiUrl: config.apiUrl || prev.apiUrl,
+      model: config.models[0]?.id || prev.model,
+    }));
+    setFetchedModels([]);
+    setFetchError(null);
   };
 
   const handleSave = () => {
@@ -176,7 +201,10 @@ export function SettingsDialog({
   };
 
   const currentProviderConfig = PROVIDER_CONFIGS[formData.provider as keyof typeof PROVIDER_CONFIGS];
-  const displayModels = fetchedModels.length > 0 ? fetchedModels : (currentProviderConfig?.models || []);
+  const displayModels =
+    fetchedModels.length > 0
+      ? fetchedModels
+      : (currentProviderConfig?.models ?? []);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -186,8 +214,9 @@ export function SettingsDialog({
         </DialogHeader>
 
         <div className="space-y-4 px-2 py-4 overflow-y-auto flex-1 min-h-0">
+          {/* Provider */}
           <div className="space-y-2">
-            <Label htmlFor="provider">
+            <Label>
               <Cpu size={16} className="inline mr-1" />
               AI Provider
             </Label>
@@ -205,6 +234,7 @@ export function SettingsDialog({
             </Select>
           </div>
 
+          {/* API Key */}
           <div className="space-y-2">
             <Label htmlFor="apiKey">
               <Key size={16} className="inline mr-1" />
@@ -214,13 +244,12 @@ export function SettingsDialog({
               id="apiKey"
               type="password"
               value={formData.apiKey}
-              onChange={(e) =>
-                setFormData({ ...formData, apiKey: e.target.value })
-              }
+              onChange={(e) => setFormData((p) => ({ ...p, apiKey: e.target.value }))}
               placeholder="sk-..."
             />
           </div>
 
+          {/* API URL */}
           <div className="space-y-2">
             <Label htmlFor="apiUrl">
               <Globe size={16} className="inline mr-1" />
@@ -230,75 +259,90 @@ export function SettingsDialog({
               id="apiUrl"
               type="text"
               value={formData.apiUrl}
-              onChange={(e) =>
-                setFormData({ ...formData, apiUrl: e.target.value })
-              }
-              placeholder="https://api.your-provider.com/v1/chat/completions"
+              onChange={(e) => setFormData((p) => ({ ...p, apiUrl: e.target.value }))}
+              placeholder="https://ruter1.scara.ovh/v1/chat/completions"
             />
+            <p className="text-[10px] text-muted-foreground">
+              Modele detectate automat din: <span className="font-mono">{deriveModelsUrl(formData.apiUrl) || "—"}</span>
+            </p>
           </div>
 
+          {/* Model selector */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="model">
+              <Label>
                 <Cpu size={16} className="inline mr-1" />
                 Model / Agent
               </Label>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-6 w-6" 
-                onClick={() => fetchModels(formData.apiUrl, formData.apiKey)}
-                disabled={isLoadingModels || !formData.apiKey}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                title="Reîncarcă lista de modele"
+                disabled={isLoadingModels}
+                onClick={() => doFetch(formData.apiUrl, formData.apiKey)}
               >
                 <RefreshCw size={12} className={cn(isLoadingModels && "animate-spin")} />
               </Button>
             </div>
+
+            {/* Status messages */}
+            {isLoadingModels && (
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <RefreshCw size={10} className="animate-spin" /> Se detectează agenții...
+              </p>
+            )}
+            {fetchError && !isLoadingModels && (
+              <p className="text-[10px] text-destructive flex items-center gap-1">
+                <AlertCircle size={10} /> {fetchError}
+              </p>
+            )}
+            {fetchedModels.length > 0 && !isLoadingModels && (
+              <p className="text-[10px] text-green-600 flex items-center gap-1">
+                <CheckCircle2 size={10} /> {fetchedModels.length} agenți detectați automat
+              </p>
+            )}
+
+            {/* Dropdown + manual input */}
             <div className="flex gap-2">
               <div className="flex-1">
-                <Select 
-                  value={formData.model} 
-                  onValueChange={(model) => setFormData({ ...formData, model })}
+                <Select
+                  value={formData.model}
+                  onValueChange={(model) => setFormData((p) => ({ ...p, model }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={isLoadingModels ? "Se încarcă..." : "Alege modelul"} />
+                    <SelectValue placeholder={isLoadingModels ? "Se încarcă..." : "Alege agentul"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {displayModels.map((model) => (
-                      <SelectItem key={model.id} value={model.id}>
-                        {model.name}
+                    {displayModels.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
                       </SelectItem>
                     ))}
                     {displayModels.length === 0 && !isLoadingModels && (
-                      <SelectItem value="none" disabled>Niciun model detectat</SelectItem>
+                      <SelectItem value="_none" disabled>
+                        Niciun agent detectat
+                      </SelectItem>
                     )}
                   </SelectContent>
                 </Select>
               </div>
               <Input
-                className="w-1/3"
+                className="w-2/5"
                 placeholder="ID manual..."
                 value={formData.model}
-                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                onChange={(e) => setFormData((p) => ({ ...p, model: e.target.value }))}
               />
             </div>
-            {fetchError && (
-              <p className="text-[10px] text-destructive flex items-center gap-1">
-                <AlertCircle size={10} /> {fetchError}
-              </p>
-            )}
-            {fetchedModels.length > 0 && (
-              <p className="text-[10px] text-green-600 font-medium">
-                ✓ {fetchedModels.length} agenți detectați automat
-              </p>
-            )}
           </div>
 
+          {/* Web Search */}
           <div className="border-t border-border/60 pt-4 mt-2">
             <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-3">
               <Search size={16} />
               Web Search (Tavily)
             </h3>
-            
+
             <div className="space-y-2">
               <Label htmlFor="tavilyApiKey">
                 <Key size={16} className="inline mr-1" />
@@ -309,10 +353,7 @@ export function SettingsDialog({
                 type="password"
                 value={webSearchForm.tavilyApiKey}
                 onChange={(e) =>
-                  setWebSearchForm({
-                    ...webSearchForm,
-                    tavilyApiKey: e.target.value,
-                  })
+                  setWebSearchForm((p) => ({ ...p, tavilyApiKey: e.target.value }))
                 }
                 placeholder="tvly-..."
               />
@@ -328,10 +369,7 @@ export function SettingsDialog({
                 type="text"
                 value={webSearchForm.tavilyApiUrl}
                 onChange={(e) =>
-                  setWebSearchForm({
-                    ...webSearchForm,
-                    tavilyApiUrl: e.target.value,
-                  })
+                  setWebSearchForm((p) => ({ ...p, tavilyApiUrl: e.target.value }))
                 }
                 placeholder="https://api.tavily.com"
               />
@@ -339,7 +377,7 @@ export function SettingsDialog({
           </div>
         </div>
 
-        <DialogFooter className="flex-row justify-end">
+        <DialogFooter className="flex-row justify-end gap-2">
           <Button variant="outline" onClick={onClose}>
             Anulează
           </Button>
