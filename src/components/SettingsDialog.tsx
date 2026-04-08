@@ -35,6 +35,11 @@ interface ModelOption {
 }
 
 const PROVIDER_CONFIGS = {
+  custom: {
+    name: "Custom / Scara AI",
+    apiUrl: "",
+    models: [],
+  },
   openai: {
     name: "OpenAI",
     apiUrl: "https://api.openai.com/v1/chat/completions",
@@ -58,11 +63,6 @@ const PROVIDER_CONFIGS = {
       { id: "deepseek-chat", name: "DeepSeek Chat" },
       { id: "deepseek-reasoner", name: "DeepSeek Reasoner" },
     ],
-  },
-  custom: {
-    name: "Custom",
-    apiUrl: "",
-    models: [],
   }
 };
 
@@ -95,7 +95,7 @@ export function SettingsDialog({
     try {
       let modelsUrl = url;
       
-      // Robust URL derivation
+      // Robust URL derivation for OpenAI-compatible endpoints
       if (url.includes("/chat/completions")) {
         modelsUrl = url.replace(/\/chat\/completions\/?$/, "/models");
       } else if (!url.endsWith("/models") && !url.endsWith("/models/")) {
@@ -115,7 +115,13 @@ export function SettingsDialog({
       const data = await res.json();
       let models: ModelOption[] = [];
 
-      if (data && Array.isArray(data.data)) {
+      // Handle standard OpenAI "list" object with "data" array
+      if (data && data.object === "list" && Array.isArray(data.data)) {
+        models = data.data.map((m: any) => ({
+          id: m.id,
+          name: m.id,
+        }));
+      } else if (data && Array.isArray(data.data)) {
         models = data.data.map((m: any) => ({
           id: m.id,
           name: m.id,
@@ -128,18 +134,13 @@ export function SettingsDialog({
       }
 
       setFetchedModels(models);
-      
-      // If current model is not in the new list and list is not empty, select the first one
-      if (models.length > 0 && !models.find(m => m.id === formData.model)) {
-        setFormData(prev => ({ ...prev, model: models[0].id }));
-      }
     } catch (err) {
       console.error("Error fetching models:", err);
       setFetchedModels([]);
     } finally {
       setIsLoadingModels(false);
     }
-  }, [formData.model]);
+  }, []);
 
   // Auto-fetch when dialog opens or credentials change
   useEffect(() => {
