@@ -67,12 +67,25 @@ const PROVIDER_CONFIGS = {
 };
 
 /**
+ * Normalizes an API URL to always end with /chat/completions.
+ * Handles common typos like /chat/completion (missing 's').
+ */
+function normalizeApiUrl(url: string): string {
+  if (!url) return url;
+  // Fix missing 's' at end
+  if (url.endsWith("/chat/completion")) {
+    return url + "s";
+  }
+  // If it ends with /v1 or /v2 etc., append /chat/completions
+  if (/\/v\d+\/?$/.test(url)) {
+    return url.replace(/\/?$/, "/chat/completions");
+  }
+  return url;
+}
+
+/**
  * Derives the /models endpoint from any OpenAI-compatible API URL.
- * Strategy: find the base up to /v1 (or similar versioned path) and append /models.
- * Examples:
- *   https://ruter1.scara.ovh/v1/chat/completions  → https://ruter1.scara.ovh/v1/models
- *   https://api.openai.com/v1/chat/completions     → https://api.openai.com/v1/models
- *   https://api.openai.com/v1/models               → https://api.openai.com/v1/models
+ * Finds the base up to /v1 (or similar versioned path) and appends /models.
  */
 function deriveModelsUrl(apiUrl: string): string {
   if (!apiUrl) return "";
@@ -88,19 +101,19 @@ function deriveModelsUrl(apiUrl: string): string {
     return `${versionMatch[1]}/models`;
   }
 
-  // Fallback: strip everything after the last slash segment that looks like a path
-  // and append /models
-  const url = new URL(apiUrl);
-  // Walk up path segments until we find something sensible
-  const parts = url.pathname.replace(/\/$/, "").split("/");
-  // Remove last segment (e.g. "completions", "completion", "chat")
-  // Keep going up until we hit a version segment or run out
-  let i = parts.length - 1;
-  while (i > 0 && !parts[i].match(/^v\d+$/i)) {
-    i--;
+  // Fallback: use URL parsing
+  try {
+    const u = new URL(apiUrl);
+    const parts = u.pathname.replace(/\/$/, "").split("/");
+    let i = parts.length - 1;
+    while (i > 0 && !parts[i].match(/^v\d+$/i)) {
+      i--;
+    }
+    const basePath = parts.slice(0, i + 1).join("/");
+    return `${u.protocol}//${u.host}${basePath}/models`;
+  } catch {
+    return "";
   }
-  const basePath = parts.slice(0, i + 1).join("/");
-  return `${url.protocol}//${url.host}${basePath}/models`;
 }
 
 export function SettingsDialog({
@@ -138,7 +151,7 @@ export function SettingsDialog({
 
     const modelsUrl = deriveModelsUrl(url);
     if (!modelsUrl) {
-      setFetchError("URL invalid.");
+      setFetchError("URL invalid — nu s-a putut determina endpoint-ul /models.");
       return;
     }
 
@@ -168,8 +181,11 @@ export function SettingsDialog({
         throw new Error("Răspunsul nu este JSON valid.");
       }
 
-      // Support { object: "list", data: [...] } and plain arrays
-      const raw: any[] = Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
+      const raw: any[] = Array.isArray(json)
+        ? json
+        : Array.isArray(json?.data)
+          ? json.data
+          : [];
 
       if (raw.length === 0) {
         throw new Error("Nu s-au găsit modele în răspuns.");
@@ -223,17 +239,24 @@ export function SettingsDialog({
     setFetchError(null);
   };
 
+  const handleApiUrlBlur = () => {
+    const normalized = normalizeApiUrl(formData.apiUrl);
+    if (normalized !== formData.apiUrl) {
+      setFormData((p) => ({ ...p, apiUrl: normalized }));
+    }
+  };
+
   const handleSave = () => {
-    onSave(formData);
+    const normalized = normalizeApiUrl(formData.apiUrl);
+    onSave({ ...formData, apiUrl: normalized });
     onSaveWebSearch(webSearchForm);
     onClose();
   };
 
-  const currentProviderConfig = PROVIDER_CONFIGS[formData.provider as keyof typeof PROVIDER_CONFIGS];
+  const currentProviderConfig =
+    PROVIDER_CONFIGS[formData.provider as keyof typeof PROVIDER_CONFIGS];
   const displayModels =
-    fetchedModels.length > 0
-      ? fetchedModels
-      : (currentProviderConfig?.models ?? []);
+    fetchedModels.length > 0 ? fetchedModels : (currentProviderConfig?.models ?? []);
 
   const modelsUrl = deriveModelsUrl(formData.apiUrl);
 
@@ -291,11 +314,13 @@ export function SettingsDialog({
               type="text"
               value={formData.apiUrl}
               onChange={(e) => setFormData((p) => ({ ...p, apiUrl: e.target.value }))}
+              onBlur={handleApiUrlBlur}
               placeholder="https://ruter1.scara.ovh/v1/chat/completions"
             />
             {modelsUrl && (
               <p className="text-[10px] text-muted-foreground">
-                Modele din: <span className="font-mono text-foreground">{modelsUrl}</span>
+                Modele din:{" "}
+                <span className="font-mono text-foreground">{modelsUrl}</span>
               </p>
             )}
           </div>
@@ -315,13 +340,17 @@ export function SettingsDialog({
                 disabled={isLoadingModels}
                 onClick={() => doFetch(formData.apiUrl, formData.apiKey)}
               >
-                <RefreshCw size={12} className={cn(isLoadingModels && "animate-spin")} />
+                <RefreshCw
+                  size={12}
+                  className={cn(isLoadingModels && "animate-spin")}
+                />
               </Button>
             </div>
 
             {isLoadingModels && (
               <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                <RefreshCw size={10} className="animate-spin" /> Se detectează agenții...
+                <RefreshCw size={10} className="animate-spin" /> Se detectează
+                agenții...
               </p>
             )}
             {fetchError && !isLoadingModels && (
@@ -331,7 +360,8 @@ export function SettingsDialog({
             )}
             {fetchedModels.length > 0 && !isLoadingModels && (
               <p className="text-[10px] text-green-600 flex items-center gap-1">
-                <CheckCircle2 size={10} /> {fetchedModels.length} agenți detectați automat
+                <CheckCircle2 size={10} /> {fetchedModels.length} agenți detectați
+                automat
               </p>
             )}
 
@@ -342,7 +372,11 @@ export function SettingsDialog({
                   onValueChange={(model) => setFormData((p) => ({ ...p, model }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={isLoadingModels ? "Se încarcă..." : "Alege agentul"} />
+                    <SelectValue
+                      placeholder={
+                        isLoadingModels ? "Se încarcă..." : "Alege agentul"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {displayModels.map((m) => (
@@ -362,7 +396,9 @@ export function SettingsDialog({
                 className="w-2/5"
                 placeholder="ID manual..."
                 value={formData.model}
-                onChange={(e) => setFormData((p) => ({ ...p, model: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, model: e.target.value }))
+                }
               />
             </div>
           </div>
